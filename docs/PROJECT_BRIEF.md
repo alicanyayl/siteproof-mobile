@@ -10,6 +10,12 @@
 - **Technology direction:** React Native with Expo and strict TypeScript
 - **Product type:** Backendless portfolio demonstration
 
+### Phase 0 technical baseline
+
+The verified foundation targets Expo SDK 57 with Expo Router, React Native 0.86.2, React 19.2.3, and strict TypeScript 6.0.3. Local and CI tooling use Node.js 22 (`>=22.13 <23`) and pnpm 10.30.0. Development builds use `expo-dev-client`, and Continuous Native Generation keeps generated `android/` and `ios/` projects outside version control. Typed routes, native light/dark appearance, deterministic Jest tests, Expo-supported ESLint, Expo Doctor, and Android JavaScript export validation form the Phase 0 quality baseline.
+
+Phase 0 intentionally contains no inspection domain, camera, location, SQLite, notifications, synchronization, conflict, or reporting implementation. Those capabilities remain assigned to later phases.
+
 ## Portfolio Objective
 
 SiteProof is a focused field-inspection mobile application designed to provide credible, reviewable evidence of practical React Native and Expo engineering. It is a portfolio project, not a commercial field-service platform.
@@ -147,7 +153,7 @@ SiteProof does not promise background location, continuous background synchroniz
 
 ### Phase 0 — Foundation
 
-Establish the Expo project foundation, Expo Router, strict TypeScript, a basic visual system, SQLite initialization, deterministic test setup, GitHub Actions, and repository metadata.
+Establish the Expo SDK 57 project foundation, Expo Router, strict TypeScript, a basic visual system, development-client and CNG configuration, deterministic test setup, GitHub Actions, and repository metadata. SQLite initialization moves to Phase 1 so Phase 0 remains a focused application foundation.
 
 ### Phase 1 — Offline task domain
 
@@ -206,7 +212,7 @@ SiteProof is complete as a portfolio demonstration when:
 - the README and architecture documentation accurately distinguish real device behavior from local simulation; and
 - the repository is committed, pushed to its intended owner when authorized in a later phase, and clean at final verification.
 
-For the current planning setup specifically, completion means this brief and the planning-state root README exist in a Git repository on `main`; no Expo scaffold, dependency installation, application code, speculative architecture document, GitHub remote, or GitHub repository is part of this step.
+For Phase 0 specifically, completion means the verified Expo application foundation, tests, quality commands, development-build profiles, CI workflow, concise documentation, and license are committed on `main`. Native inspection capabilities remain out of scope until their assigned phases.
 
 ## Risks and Scope Controls
 

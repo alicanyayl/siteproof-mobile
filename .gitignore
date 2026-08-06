@@ -1,0 +1,59 @@
+# Dependencies and package-manager state
+node_modules/
+.pnpm-store/
+
+# Expo local state and generated declarations
+.expo/
+expo-env.d.ts
+.metro-health-check*
+
+# Continuous Native Generation output
+/android/
+/ios/
+.kotlin/
+
+# Build, export, and EAS artifacts
+dist/
+web-build/
+build/
+.eas-build-local/
+*.apk
+*.aab
+*.ipa
+
+# Tests and coverage
+coverage/
+test-results/
+junit.xml
+
+# Logs
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+pnpm-debug.*
+
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# Credentials and signing material
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.pem
+
+# TypeScript
+*.tsbuildinfo
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
