@@ -3,6 +3,9 @@ import type { ColorSchemeName } from 'react-native';
 export type ColorTokens = {
   background: string;
   border: string;
+  danger: string;
+  dangerSoft: string;
+  onPrimary: string;
   primary: string;
   primarySoft: string;
   status: string;
@@ -12,11 +15,15 @@ export type ColorTokens = {
   text: string;
   textMuted: string;
   warning: string;
+  warningSoft: string;
 };
 
 const lightColors: ColorTokens = {
   background: '#F3F6FA',
   border: '#CFD9E7',
+  danger: '#B42318',
+  dangerSoft: '#FEE4E2',
+  onPrimary: '#FFFFFF',
   primary: '#1D4ED8',
   primarySoft: '#E8F0FF',
   status: '#0F766E',
@@ -26,11 +33,15 @@ const lightColors: ColorTokens = {
   text: '#10233F',
   textMuted: '#526176',
   warning: '#B45309',
+  warningSoft: '#FFF2CC',
 };
 
 const darkColors: ColorTokens = {
   background: '#08111F',
   border: '#29425E',
+  danger: '#FDA29B',
+  dangerSoft: '#3B1719',
+  onPrimary: '#071426',
   primary: '#79A9FF',
   primarySoft: '#142B50',
   status: '#5EEAD4',
@@ -40,6 +51,7 @@ const darkColors: ColorTokens = {
   text: '#F5F8FC',
   textMuted: '#AFC0D4',
   warning: '#FBBF24',
+  warningSoft: '#3B2F0F',
 };
 
 export const colors = {
