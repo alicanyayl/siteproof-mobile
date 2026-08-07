@@ -12,7 +12,7 @@
 
 ### Phase 0 technical baseline
 
-The verified foundation targets Expo SDK 57 with Expo Router, React Native 0.86.2, React 19.2.3, and strict TypeScript 6.0.3. Local and CI tooling use Node.js 22 (`>=22.13 <23`) and pnpm 10.30.0. Development builds use `expo-dev-client`, and Continuous Native Generation keeps generated `android/` and `ios/` projects outside version control. Typed routes, native light/dark appearance, deterministic Jest tests, Expo-supported ESLint, Expo Doctor, and Android JavaScript export validation form the Phase 0 quality baseline.
+The verified foundation targets Expo SDK 54.0.36 with Expo Router 6.0.24, React Native 0.81.5, React 19.1.0, and strict TypeScript 5.9.3. Local and CI tooling use Node.js 22 (`>=22.13 <23`) and pnpm 10.30.0. Expo Go is the primary development runtime, and Continuous Native Generation keeps generated `android/` and `ios/` projects outside version control. SDK 54 is used specifically so the portfolio project can run on a physical iPhone through the current App Store Expo Go binary; this is a runtime compatibility choice, not a claim that SDK 54 is technically superior to SDK 57. Typed routes, native light/dark appearance, deterministic Jest tests, Expo-supported ESLint, Expo Doctor, and Android JavaScript export validation form the Phase 0 quality baseline.
 
 Phase 0 intentionally contained no inspection domain, camera, location, SQLite, notifications, synchronization, conflict, or reporting implementation. Those capabilities remained assigned to later phases.
 
@@ -20,7 +20,7 @@ Phase 0 intentionally contained no inspection domain, camera, location, SQLite, 
 
 Phase 1 implements the offline task domain with `expo-sqlite` and Zod. A versioned migration creates `tasks` and `checklist_items`; first-run seeding adds 24 deterministic synthetic tasks and 138 checklist items without overwriting an existing database. A typed repository owns database access, while the route layer passes only task IDs. The assigned-task list is virtualized, task detail safely handles missing IDs, and every checklist toggle is written immediately before the UI reloads the saved record.
 
-The Phase 1 automated tests validate fixture integrity and UI behavior through the repository boundary. They do not substitute for development-build or real-device proof that SQLite data survives an operating-system process restart; that verification remains an explicit native validation item.
+The Phase 1 automated tests validate fixture integrity and UI behavior through the repository boundary. They do not substitute for real-device proof that SQLite data survives an operating-system process restart; that verification remains an explicit native validation item.
 
 ## Portfolio Objective
 
@@ -159,7 +159,7 @@ SiteProof does not promise background location, continuous background synchroniz
 
 ### Phase 0 — Foundation
 
-Establish the Expo SDK 57 project foundation, Expo Router, strict TypeScript, a basic visual system, development-client and CNG configuration, deterministic test setup, GitHub Actions, and repository metadata. SQLite initialization moves to Phase 1 so Phase 0 remains a focused application foundation.
+Establish the Expo project foundation, now aligned to Expo SDK 54 for App Store Expo Go compatibility, with Expo Router, strict TypeScript, a basic visual system, CNG configuration, deterministic test setup, GitHub Actions, and repository metadata. SQLite initialization moves to Phase 1 so Phase 0 remains a focused application foundation.
 
 ### Phase 1 — Offline task domain
 
@@ -218,7 +218,7 @@ SiteProof is complete as a portfolio demonstration when:
 - the README and architecture documentation accurately distinguish real device behavior from local simulation; and
 - the repository is committed, pushed to its intended owner when authorized in a later phase, and clean at final verification.
 
-For Phase 0 specifically, completion means the verified Expo application foundation, tests, quality commands, development-build profiles, CI workflow, concise documentation, and license are committed on `main`. Native inspection capabilities remain out of scope until their assigned phases.
+For Phase 0 specifically, completion means the verified Expo application foundation, tests, quality commands, Expo Go-compatible development workflow, CI workflow, concise documentation, and license are committed on `main`. Native inspection capabilities remain out of scope until their assigned phases.
 
 For Phase 1 specifically, completion means the deterministic offline task fixtures, versioned SQLite schema, repository boundary, assigned-task list, task detail route, immediately persisted checklist draft state, automated tests, documentation, and Android bundle validation are committed on `main`. Device-level persistence evidence remains distinct from local automated checks.
 

@@ -4,7 +4,7 @@ SiteProof is an Android-first Expo portfolio app that demonstrates a credible of
 
 ## Current implementation
 
-Phase 0 established the Expo SDK 57 foundation: Expo Router, strict TypeScript, light and dark themes, safe-area-aware responsive layouts, a development-client configuration, deterministic tests, Android JavaScript export validation, and GitHub Actions CI.
+Phase 0 established the Expo foundation: Expo Router, strict TypeScript, light and dark themes, safe-area-aware responsive layouts, deterministic tests, Android JavaScript export validation, and GitHub Actions CI. The foundation is now aligned to Expo SDK 54 so it can run in the current App Store Expo Go binary on a physical iPhone.
 
 Phase 1 adds the offline task domain:
 
@@ -16,13 +16,13 @@ Phase 1 adds the offline task domain:
 - typed task-detail navigation with safe unknown-ID handling; and
 - immediately persisted checklist drafts that remain the local source of truth.
 
-The current baseline uses Expo SDK 57, React Native 0.86, React 19, Node.js 22 (`>=22.13 <23`), and pnpm 10. Continuous Native Generation is used, so generated `android/` and `ios/` projects are not committed.
+The current baseline uses Expo SDK 54.0.36, React Native 0.81.5, React 19.1.0, TypeScript 5.9.3, Node.js 22 (`>=22.13 <23`), and pnpm 10.30.0. SDK 54 is a deliberate Expo Go compatibility choice for physical-device portfolio validation; it is not presented as technically superior to SDK 57. Continuous Native Generation is used, so generated `android/` and `ios/` projects are not committed.
 
 ## Offline architecture
 
 `SQLiteProvider` initializes `siteproof.db` before application routes render. Migration version 1 creates `tasks` and `checklist_items`, enables foreign keys and WAL mode, and seeds fixtures only when the task table is empty. UI code reads and updates data through `TaskRepository`; route parameters carry only a task ID. Checking an item writes its new state immediately and promotes an assigned task to in-progress in the same transaction.
 
-Automated tests validate fixture integrity, list behavior, typed repository interactions, checklist accessibility state, saved-state reloads, and unknown task IDs. Native persistence across a process restart still requires development-build or device verification and is not claimed by the Jest suite.
+Automated tests validate fixture integrity, list behavior, typed repository interactions, checklist accessibility state, saved-state reloads, and unknown task IDs. Native persistence across a process restart still requires device verification and is not claimed by the Jest suite.
 
 ## Local setup
 
@@ -33,7 +33,7 @@ pnpm install
 pnpm start
 ```
 
-`pnpm start` targets an Expo development build. A compatible development client must be built and installed separately before native-device use.
+`pnpm start` starts the project in Expo Go mode. Scan the displayed QR code with the current App Store Expo Go app to open SiteProof on a physical iPhone. This development workflow does not require an Apple Developer account, EAS login, an IPA, or a custom development client.
 
 ## Commands
 
@@ -47,9 +47,9 @@ pnpm start
 
 ## Capability status
 
-Implemented now: the Expo/React Native foundation, typed routing, accessible and responsive light/dark UI, development-build configuration, automated tests and CI, plus the local task/checklist domain backed by SQLite.
+Implemented now: the Expo/React Native foundation, Expo Go development workflow, typed routing, accessible and responsive light/dark UI, automated tests and CI, plus the Phase 1 local task/checklist domain backed by SQLite.
 
-Not yet implemented: camera, location, permissions, notifications, lifecycle synchronization, mutation queues, conflicts, PDF generation, native sharing, EAS cloud builds, and real-device verification. Remote services will remain explicit local simulations where the [project brief](docs/PROJECT_BRIEF.md) requires them.
+Phase 2 native evidence is not yet implemented. Camera, location, permissions, notifications, lifecycle synchronization, mutation queues, conflicts, PDF generation, native sharing, EAS cloud builds, and real-device verification also remain outstanding. Remote services will remain explicit local simulations where the [project brief](docs/PROJECT_BRIEF.md) requires them.
 
 ## License
 
