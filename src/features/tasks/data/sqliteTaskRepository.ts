@@ -1,6 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-import type { ChecklistItemRow, TaskEvidenceRow, TaskLocationCheckRow, TaskRow } from '@/db/types';
+import type { ChecklistItemRow, SyncConflictRow, TaskEvidenceRow, TaskLocationCheckRow, TaskRow } from '@/db/types';
 import {
   checklistItemSchema,
   inspectionTaskSchema,
@@ -8,6 +8,9 @@ import {
   taskLocationCheckSchema,
   type ChecklistItem,
   type InspectionTask,
+  type SyncConflictItem,
+  type SyncQueueItem,
+  type SyncQueueSummary,
   type TaskDetail,
   type TaskEvidence,
   type TaskLocationCheck,
@@ -344,7 +347,7 @@ export class SQLiteTaskRepository implements TaskRepository {
     });
   }
 
-  public async getSyncQueueSummary(): Promise<any> {
+  public async getSyncQueueSummary(): Promise<SyncQueueSummary> {
     const row = await this.db.getFirstAsync<{
       conflictCount: number;
       failedCount: number;
@@ -370,8 +373,8 @@ export class SQLiteTaskRepository implements TaskRepository {
     };
   }
 
-  public async listSyncQueue(): Promise<any[]> {
-    const rows = await this.db.getAllAsync<any>(
+  public async listSyncQueue(): Promise<SyncQueueItem[]> {
+    const rows = await this.db.getAllAsync<SyncQueueItem>(
       `SELECT
          id,
          mutation_type AS mutationType,
@@ -392,8 +395,8 @@ export class SQLiteTaskRepository implements TaskRepository {
     return rows;
   }
 
-  public async listSyncConflicts(): Promise<any[]> {
-    const rows = await this.db.getAllAsync<any>(
+  public async listSyncConflicts(): Promise<SyncConflictItem[]> {
+    const rows = await this.db.getAllAsync<SyncConflictRow>(
       `SELECT
          id,
          queue_id AS queueId,
@@ -416,8 +419,8 @@ export class SQLiteTaskRepository implements TaskRepository {
     }));
   }
 
-  public async getSyncConflictById(conflictId: string): Promise<any | null> {
-    const r = await this.db.getFirstAsync<any>(
+  public async getSyncConflictById(conflictId: string): Promise<SyncConflictItem | null> {
+    const r = await this.db.getFirstAsync<SyncConflictRow>(
       `SELECT
          id,
          queue_id AS queueId,

@@ -45,4 +45,23 @@ describe('<AssignedTasksScreen />', () => {
     expect(await screen.findByText('Tasks could not be loaded')).toBeVisible();
     expect(screen.getByRole('button', { name: 'Try again' })).toBeVisible();
   });
+
+  it('handles sync queue summary rejection gracefully without hiding assigned tasks', async () => {
+    const tasks = seedFixtures.tasks.slice(0, 2);
+    const repository = createFakeTaskRepository({
+      getSyncQueueSummary: async () => Promise.reject(new Error('Sync summary query failed')),
+      listAssignedTasks: async () => tasks,
+    });
+
+    await render(
+      <AssignedTasksScreen
+        onOpenSyncCenter={jest.fn()}
+        onSelectTask={jest.fn()}
+        repository={repository}
+      />,
+    );
+
+    expect(await screen.findByText(tasks[0]?.title ?? '')).toBeVisible();
+    expect(await screen.findByText('Sync status unavailable')).toBeVisible();
+  });
 });

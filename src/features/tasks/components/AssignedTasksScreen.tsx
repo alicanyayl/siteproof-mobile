@@ -38,6 +38,7 @@ export function AssignedTasksScreen({ onOpenSyncCenter, onSelectTask, refreshKey
   const [state, setState] = useState<TaskListState>({ kind: 'loading' });
 
   const [networkStatus, setNetworkStatus] = useState<NetworkStatus>('online');
+  const [isSyncSummaryUnavailable, setIsSyncSummaryUnavailable] = useState(false);
   const [queueSummary, setQueueSummary] = useState<SyncQueueSummary>({
     conflictCount: 0,
     failedCount: 0,
@@ -82,9 +83,16 @@ export function AssignedTasksScreen({ onOpenSyncCenter, onSelectTask, refreshKey
     if (typeof repository.getSyncQueueSummary === 'function') {
       repository.getSyncQueueSummary().then(
         (summary) => {
-          if (active && summary != null) setQueueSummary(summary);
+          if (active && summary != null) {
+            setQueueSummary(summary);
+            setIsSyncSummaryUnavailable(false);
+          }
         },
-        () => {},
+        (_error) => {
+          if (active) {
+            setIsSyncSummaryUnavailable(true);
+          }
+        },
       );
     }
 
@@ -146,11 +154,13 @@ export function AssignedTasksScreen({ onOpenSyncCenter, onSelectTask, refreshKey
                   ]}
                 >
                   <Text style={[styles.syncBadgeText, { color: networkStatus === 'offline' ? colors.warning : colors.text }]}>
-                    {networkStatus === 'offline'
-                      ? `Offline • ${unsentCount} queued`
-                      : unsentCount > 0
-                        ? `Sync • ${unsentCount} pending`
-                        : 'Sync Center'}
+                    {isSyncSummaryUnavailable
+                      ? 'Sync status unavailable'
+                      : networkStatus === 'offline'
+                        ? `Offline • ${unsentCount} queued`
+                        : unsentCount > 0
+                          ? `Sync • ${unsentCount} pending`
+                          : 'Sync Center'}
                   </Text>
                 </Pressable>
               ) : null}

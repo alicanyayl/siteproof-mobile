@@ -1,5 +1,5 @@
 import * as Linking from 'expo-linking';
-import { router } from 'expo-router';
+import { type Href, router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useEffect, useState } from 'react';
 import {
@@ -337,7 +337,7 @@ function QueueItemRow({ colors, item }: { colors: ReturnType<typeof getColors>; 
       router.push({
         pathname: '/sync/conflicts/[conflictId]',
         params: { conflictId: item.id },
-      } as any);
+      } as Href);
     }
   };
 

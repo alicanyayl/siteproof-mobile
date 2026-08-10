@@ -1,3 +1,5 @@
+import { NetInfoStateType } from '@react-native-community/netinfo';
+
 import { determineNetworkStatus } from '@/features/sync/services/connectivityService';
 
 describe('connectivityService', () => {
@@ -6,7 +8,7 @@ describe('connectivityService', () => {
       details: null,
       isConnected: false,
       isInternetReachable: true,
-      type: 'wifi' as any,
+      type: NetInfoStateType.wifi,
     });
     expect(status).toBe('offline');
   });
@@ -16,7 +18,7 @@ describe('connectivityService', () => {
       details: null,
       isConnected: true,
       isInternetReachable: false,
-      type: 'cellular' as any,
+      type: NetInfoStateType.cellular,
     });
     expect(status).toBe('offline');
   });
@@ -26,18 +28,15 @@ describe('connectivityService', () => {
       details: null,
       isConnected: true,
       isInternetReachable: true,
-      type: 'wifi' as any,
+      type: NetInfoStateType.wifi,
     });
     expect(status).toBe('online');
   });
 
-  it('identifies unknown when isConnected is null', () => {
-    const status = determineNetworkStatus({
-      details: null,
-      isConnected: null as any,
-      isInternetReachable: null as any,
-      type: 'unknown' as any,
-    });
-    expect(status).toBe('unknown');
+  it('identifies unknown when isConnected is null or state is null', () => {
+    const statusNull = determineNetworkStatus(null);
+    const statusUndefined = determineNetworkStatus(undefined);
+    expect(statusNull).toBe('unknown');
+    expect(statusUndefined).toBe('unknown');
   });
 });

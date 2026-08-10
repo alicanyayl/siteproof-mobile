@@ -1,12 +1,28 @@
+import type { SyncDatabaseBoundary } from '@/db/types';
 import { processSimulatedServerMutation } from '@/features/sync/services/simulatedServer';
 import type { SyncQueueItem } from '@/features/tasks/domain/task';
 
+type MockDatabaseConfig = {
+  getFirstAsync?: jest.Mock<Promise<unknown>, [string, ...unknown[]]>;
+  getAllAsync?: jest.Mock<Promise<unknown[]>, [string, ...unknown[]]>;
+  runAsync?: jest.Mock<Promise<{ changes: number }>, [string, ...unknown[]]>;
+  withTransactionAsync?: <T>(task: () => Promise<T>) => Promise<T>;
+};
+
+function createMockSyncDatabase(config: MockDatabaseConfig = {}): SyncDatabaseBoundary {
+  return {
+    getFirstAsync: config.getFirstAsync ?? jest.fn().mockResolvedValue(null),
+    getAllAsync: config.getAllAsync ?? jest.fn().mockResolvedValue([]),
+    runAsync: config.runAsync ?? jest.fn().mockResolvedValue({ changes: 1 }),
+    withTransactionAsync: config.withTransactionAsync ?? (async <T>(task: () => Promise<T>): Promise<T> => task()),
+  };
+}
+
 describe('syncEngine & simulatedServer', () => {
   it('processes checklist_update mutation successfully when base_version matches', async () => {
-    const fakeDb: any = {
-      getFirstAsync: jest.fn().mockResolvedValue({ checked: 0, version: 1 }),
-      runAsync: jest.fn().mockResolvedValue({ changes: 1 }),
-    };
+    const getFirstAsync = jest.fn().mockResolvedValue({ checked: 0, version: 1 });
+    const runAsync = jest.fn().mockResolvedValue({ changes: 1 });
+    const fakeDb = createMockSyncDatabase({ getFirstAsync, runAsync });
 
     const queueItem: SyncQueueItem = {
       attemptCount: 0,
@@ -25,7 +41,7 @@ describe('syncEngine & simulatedServer', () => {
 
     const res = await processSimulatedServerMutation(fakeDb, queueItem);
     expect(res.outcome).toBe('synced');
-    expect(fakeDb.runAsync).toHaveBeenCalledWith(
+    expect(runAsync).toHaveBeenCalledWith(
       expect.stringContaining('UPDATE simulated_remote_checklist'),
       1,
       expect.any(String),
@@ -34,14 +50,13 @@ describe('syncEngine & simulatedServer', () => {
   });
 
   it('creates conflict when base_version differs from simulated remote version', async () => {
-    const fakeDb: any = {
-      getFirstAsync: jest
-        .fn()
-        .mockResolvedValueOnce(null) // fail_next_request
-        .mockResolvedValueOnce({ checked: 0, version: 2 }) // simulated_remote_checklist
-        .mockResolvedValueOnce({ checked: 1 }), // local checklist item
-      runAsync: jest.fn().mockResolvedValue({ changes: 1 }),
-    };
+    const getFirstAsync = jest
+      .fn()
+      .mockResolvedValueOnce(null) // fail_next_request
+      .mockResolvedValueOnce({ checked: 0, version: 2 }) // simulated_remote_checklist
+      .mockResolvedValueOnce({ checked: 1 }); // local checklist item
+    const runAsync = jest.fn().mockResolvedValue({ changes: 1 });
+    const fakeDb = createMockSyncDatabase({ getFirstAsync, runAsync });
 
     const queueItem: SyncQueueItem = {
       attemptCount: 0,
@@ -64,7 +79,7 @@ describe('syncEngine & simulatedServer', () => {
       expect(res.conflictId).toMatch(/^CNF-/);
     }
 
-    expect(fakeDb.runAsync).toHaveBeenCalledWith(
+    expect(runAsync).toHaveBeenCalledWith(
       expect.stringContaining('INSERT INTO sync_conflicts'),
       expect.any(String),
       'SEQ-1',
@@ -78,9 +93,7 @@ describe('syncEngine & simulatedServer', () => {
   });
 
   it('accepts evidence_added and location_check_added without pretending image file upload', async () => {
-    const fakeDb: any = {
-      getFirstAsync: jest.fn().mockResolvedValue(null),
-    };
+    const fakeDb = createMockSyncDatabase();
 
     const evidenceItem: SyncQueueItem = {
       attemptCount: 0,

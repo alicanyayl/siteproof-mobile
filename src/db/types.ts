@@ -82,4 +82,12 @@ export type SyncSimulationFlagRow = {
   flagValue: number;
 };
 
+export interface SyncDatabaseBoundary {
+  getFirstAsync<T>(sql: string, ...params: readonly unknown[]): Promise<T | null>;
+  getAllAsync<T>(sql: string, ...params: readonly unknown[]): Promise<T[]>;
+  runAsync(sql: string, ...params: readonly unknown[]): Promise<{ changes: number }>;
+  withTransactionAsync?<T>(task: () => Promise<T>): Promise<T>;
+}
+
+
 

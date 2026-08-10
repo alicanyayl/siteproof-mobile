@@ -1,5 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
+import type { SyncDatabaseBoundary, SyncQueueRow } from '@/db/types';
 import { getCurrentNetworkStatus } from '@/features/sync/services/connectivityService';
 import { calculateNextAttemptAtIso } from '@/features/sync/services/retryPolicy';
 import { processSimulatedServerMutation } from '@/features/sync/services/simulatedServer';
@@ -19,7 +20,7 @@ export type SyncProcessorResult = {
 };
 
 export async function processSyncQueue(
-  db: SQLiteDatabase,
+  db: SQLiteDatabase | SyncDatabaseBoundary,
   options: { force?: boolean } = {},
 ): Promise<SyncProcessorResult> {
   if (isSyncProcessorRunning) {
@@ -41,7 +42,7 @@ export async function processSyncQueue(
     }
 
     const nowIso = new Date().toISOString();
-    const rows = await db.getAllAsync<any>(
+    const rows = await db.getAllAsync<SyncQueueRow>(
       `SELECT
          id,
          mutation_type AS mutationType,

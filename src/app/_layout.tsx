@@ -30,7 +30,9 @@ function RootLayoutContent() {
     });
 
     // Initial sync trigger on startup
-    processSyncQueue(db).catch(() => {});
+    processSyncQueue(db).catch((error) => {
+      console.warn('Background sync error on app startup:', error);
+    });
 
     // Notification Response Listener for safe typed navigation
     const notifSub = Notifications.addNotificationResponseReceivedListener((response) => {
@@ -40,9 +42,9 @@ function RootLayoutContent() {
           router.push({
             pathname: '/sync/conflicts/[conflictId]',
             params: { conflictId: payload.conflictId },
-          } as any);
+          } as Href);
         } else if (payload.targetScreen === 'sync') {
-          router.push('/sync' as any);
+          router.push('/sync' as Href);
         }
       }
     });

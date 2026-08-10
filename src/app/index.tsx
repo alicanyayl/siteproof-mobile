@@ -1,4 +1,4 @@
-import { router, usePathname } from 'expo-router';
+import { type Href, router, usePathname } from 'expo-router';
 
 import { AssignedTasksScreen } from '@/features/tasks/components/AssignedTasksScreen';
 import { useTaskRepository } from '@/features/tasks/hooks/useTaskRepository';
@@ -9,7 +9,7 @@ export default function AssignedTasksRoute() {
 
   return (
     <AssignedTasksScreen
-      onOpenSyncCenter={() => router.push('/sync' as any)}
+      onOpenSyncCenter={() => router.push('/sync' as Href)}
       onSelectTask={(taskId) => router.push({ pathname: '/tasks/[taskId]', params: { taskId } })}
       refreshKey={pathname}
       repository={repository}

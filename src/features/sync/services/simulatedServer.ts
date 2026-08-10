@@ -1,12 +1,13 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
+import type { SyncDatabaseBoundary } from '@/db/types';
 import type { SyncQueueItem } from '@/features/tasks/domain/task';
 
 export type SimulationOutcome =
   | { conflictId: string; outcome: 'conflict' }
   | { outcome: 'synced' };
 
-export async function setFailNextRequest(db: SQLiteDatabase, fail: boolean): Promise<void> {
+export async function setFailNextRequest(db: SQLiteDatabase | SyncDatabaseBoundary, fail: boolean): Promise<void> {
   await db.runAsync(
     `INSERT INTO sync_simulation_flags (flag_name, flag_value)
      VALUES ('fail_next_request', ?)
@@ -15,7 +16,7 @@ export async function setFailNextRequest(db: SQLiteDatabase, fail: boolean): Pro
   );
 }
 
-export async function getFailNextRequestStatus(db: SQLiteDatabase): Promise<boolean> {
+export async function getFailNextRequestStatus(db: SQLiteDatabase | SyncDatabaseBoundary): Promise<boolean> {
   const row = await db.getFirstAsync<{ flag_value: number }>(
     `SELECT flag_value FROM sync_simulation_flags WHERE flag_name = 'fail_next_request'`,
   );
@@ -23,13 +24,13 @@ export async function getFailNextRequestStatus(db: SQLiteDatabase): Promise<bool
 }
 
 export async function injectRemoteChecklistConflict(
-  db: SQLiteDatabase,
+  db: SQLiteDatabase | SyncDatabaseBoundary,
   itemId: string,
 ): Promise<{ newVersion: number; remoteChecked: boolean }> {
   const nowIso = new Date().toISOString();
   let result = { newVersion: 1, remoteChecked: true };
 
-  await db.withTransactionAsync(async () => {
+  const performTx = async () => {
     const existing = await db.getFirstAsync<{ checked: number; version: number }>(
       'SELECT checked, version FROM simulated_remote_checklist WHERE item_id = ?',
       itemId,
@@ -59,13 +60,19 @@ export async function injectRemoteChecklistConflict(
       );
       result = { newVersion: 2, remoteChecked: true };
     }
-  });
+  };
+
+  if (typeof db.withTransactionAsync === 'function') {
+    await db.withTransactionAsync(performTx);
+  } else {
+    await performTx();
+  }
 
   return result;
 }
 
 export async function processSimulatedServerMutation(
-  db: SQLiteDatabase,
+  db: SQLiteDatabase | SyncDatabaseBoundary,
   queueItem: SyncQueueItem,
 ): Promise<SimulationOutcome> {
   const nowIso = new Date().toISOString();
