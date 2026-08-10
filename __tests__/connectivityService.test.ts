@@ -1,35 +1,58 @@
-import { NetInfoStateType } from '@react-native-community/netinfo';
+import {
+  NetInfoStateType,
+  type NetInfoCellularState,
+  type NetInfoNoConnectionState,
+  type NetInfoWifiState,
+} from '@react-native-community/netinfo';
 
 import { determineNetworkStatus } from '@/features/sync/services/connectivityService';
 
 describe('connectivityService', () => {
   it('identifies offline when isConnected is false', () => {
-    const status = determineNetworkStatus({
+    const offlineState: NetInfoNoConnectionState = {
       details: null,
       isConnected: false,
-      isInternetReachable: true,
-      type: NetInfoStateType.wifi,
-    });
+      isInternetReachable: false,
+      type: NetInfoStateType.none,
+    };
+    const status = determineNetworkStatus(offlineState);
     expect(status).toBe('offline');
   });
 
   it('identifies offline when isInternetReachable is false', () => {
-    const status = determineNetworkStatus({
-      details: null,
+    const unreachableState: NetInfoCellularState = {
+      details: {
+        carrier: null,
+        cellularGeneration: null,
+        isConnectionExpensive: false,
+      },
       isConnected: true,
       isInternetReachable: false,
       type: NetInfoStateType.cellular,
-    });
+    };
+    const status = determineNetworkStatus(unreachableState);
     expect(status).toBe('offline');
   });
 
   it('identifies online when isConnected is true and reachability is not explicitly false', () => {
-    const status = determineNetworkStatus({
-      details: null,
+    const onlineState: NetInfoWifiState = {
+      details: {
+        bssid: null,
+        frequency: null,
+        ipAddress: null,
+        isConnectionExpensive: false,
+        linkSpeed: null,
+        rxLinkSpeed: null,
+        ssid: null,
+        strength: null,
+        subnet: null,
+        txLinkSpeed: null,
+      },
       isConnected: true,
       isInternetReachable: true,
       type: NetInfoStateType.wifi,
-    });
+    };
+    const status = determineNetworkStatus(onlineState);
     expect(status).toBe('online');
   });
 

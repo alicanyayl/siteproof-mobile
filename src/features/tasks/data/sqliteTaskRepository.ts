@@ -416,6 +416,7 @@ export class SQLiteTaskRepository implements TaskRepository {
       ...r,
       localChecked: r.localChecked === 1,
       remoteChecked: r.remoteChecked === 1,
+      resolution: r.resolution as SyncConflictItem['resolution'],
     }));
   }
 
@@ -445,6 +446,7 @@ export class SQLiteTaskRepository implements TaskRepository {
       ...r,
       localChecked: r.localChecked === 1,
       remoteChecked: r.remoteChecked === 1,
+      resolution: r.resolution as SyncConflictItem['resolution'],
     };
   }
 

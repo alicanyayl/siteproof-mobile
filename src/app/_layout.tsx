@@ -1,5 +1,5 @@
 import * as Notifications from 'expo-notifications';
-import { router, Stack } from 'expo-router';
+import { type Href, router, Stack } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect } from 'react';
 import { AppState, useColorScheme } from 'react-native';

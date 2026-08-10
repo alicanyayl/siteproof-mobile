@@ -72,10 +72,10 @@ export async function processSyncQueue(
         entityId: item.entityId,
         id: item.id,
         lastError: item.lastError,
-        mutationType: item.mutationType,
+        mutationType: item.mutationType as SyncQueueItem['mutationType'],
         nextAttemptAt: item.nextAttemptAt,
         payloadJson: item.payloadJson,
-        status: item.status,
+        status: item.status as SyncQueueItem['status'],
         taskId: item.taskId,
         updatedAt: item.updatedAt,
       };
