@@ -1,6 +1,6 @@
 # SiteProof
 
-SiteProof is a cross-platform React Native and Expo mobile application targeting iOS and Android. It demonstrates a complete, offline-first field inspection workflow built with real native mobile capabilities and clearly labeled local simulations.
+SiteProof is a cross-platform React Native and Expo mobile application targeting iOS and Android. It demonstrates an offline-first field inspection workflow built with real native mobile capabilities and clearly labeled local simulations.
 
 ---
 
@@ -16,10 +16,10 @@ Most mobile portfolio applications are simple CRUD wrappers around REST APIs tha
 
 ## Technical Highlights
 
-- **Expo SDK 54 & Expo Router 6:** File-based typed routing (`src/app/`) running cleanly in the App Store Expo Go binary on physical iOS and Android devices.
+- **Expo SDK 54 & Expo Router 6:** File-based typed routing (`src/app/`) running in the App Store Expo Go binary on physical iOS hardware.
 - **Strict TypeScript & Schema Validation:** Zod schemas for all domain entities, zero `any` types, zero unsafe casts, and zero rule disables.
 - **Durable SQLite Outbox & Conflict Engine:** Database migration v1-v3 with transaction-safe mutation enqueuing, checklist mutation coalescing, deterministic conflict injection, and side-by-side conflict resolution UI.
-- **HTML & PDF Inspection Reports:** Safe HTML escaping utility, professional report rendering via `expo-print`, and native OS share sheet via `expo-sharing`.
+- **HTML & PDF Inspection Reports:** Safe HTML escaping utility, truthful location evaluation (`evaluateLocationVerification`), report rendering via `expo-print`, and native OS share sheet via `expo-sharing`.
 - **Restrained Motion & Accessibility:** Motion primitives (`FadeInView`, `PulseDot`) built on React Native `Animated`, fully respecting system Reduce Motion settings (`AccessibilityInfo`).
 
 ---
@@ -48,14 +48,20 @@ Most mobile portfolio applications are simple CRUD wrappers around REST APIs tha
 ```
 src/
 ├── app/                      # Expo Router routes (file-based typed navigation)
-│   ├── _layout.tsx           # Root provider, lifecycle listeners, connectivity transition sync
+│   ├── _layout.tsx           # Root layout provider, lifecycle listeners, connectivity transition sync
 │   ├── index.tsx             # Assigned tasks list route
-│   ├── task/[id].tsx         # Task detail, checklist, evidence, location & report route
-│   └── sync/                 # Sync Center & Conflict Resolution routes
+│   ├── tasks/
+│   │   ├── [taskId].tsx      # Task detail, checklist, evidence, location & report route
+│   │   └── [taskId]/
+│   │       └── camera.tsx    # Native camera capture route
+│   └── sync/
+│       ├── index.tsx         # Sync Center route
+│       └── conflicts/
+│           └── [conflictId].tsx # Conflict resolution route
 ├── db/                       # SQLite Provider, schema migrations (v1-v3), seed data
 ├── features/
 │   ├── evidence/             # CameraView capture, thumbnail preview, document storage service
-│   ├── location/             # Foreground GPS acquisition, Haversine formula, accuracy rule
+│   ├── location/             # Foreground GPS acquisition, Haversine formula, accuracy evaluation rule
 │   ├── motion/               # FadeInView, PulseDot, useReduceMotion hook
 │   ├── reports/              # HTML escape utility, expo-print PDF generator, expo-sharing service
 │   ├── sync/                 # Outbox processor, NetInfo connectivity, retry policy, simulated server
@@ -76,28 +82,38 @@ src/
 
 ## PDF Report Generation & Native Sharing
 
-Inspectors can export an official inspection report directly from the Task Detail route:
+Inspectors can export an inspection PDF report directly from the Task Detail route:
 
-1. **Generate Report Action:** Tapping **Generate & Share Report** builds an HTML report containing task metadata, checklist completion stats, location verification coordinates, distance, device accuracy, and photo evidence counts.
+1. **Generate Report Action:** Tapping **Generate & Share Report** builds an HTML report containing task metadata, due date, checklist completion stats, location verification coordinates, distance, device accuracy, and photo evidence counts.
 2. **HTML Escaping:** All user-derived text is sanitized through `escapeHtml()` to prevent injection.
-3. **PDF Compilation:** `Print.printToFileAsync({ html })` compiles the report into an application cache PDF document (`.pdf`).
-4. **Native Share Sheet:** `Sharing.shareAsync(pdfUri)` opens the native iOS / Android share sheet with `application/pdf` MIME type and `com.adobe.pdf` UTI.
+3. **Truthful Location Status:** Evaluates location checks via `evaluateLocationVerification()` rendering *Verified On-Site*, *Outside Verification Area*, or *Accuracy Insufficient*.
+4. **PDF Compilation:** `Print.printToFileAsync({ html })` compiles the report into an application cache PDF document (`.pdf`).
+5. **Native Share Sheet:** `Sharing.shareAsync(pdfUri)` opens the native share sheet with `application/pdf` MIME type and `com.adobe.pdf` UTI. Success haptic (`triggerSuccessHaptic`) is emitted only when native sharing completes.
 
 ---
 
-## Physical Device & Compatibility Verification
+## Device & Platform Verification Matrix
 
 ### Confirmed on Physical iPhone 16 (App Store Expo Go, SDK 54)
 - SQLite checklist draft persistence across full operating-system process relaunch;
 - Real camera photo capture, preview, retake, and document file persistence under `Paths.document`;
 - Real foreground location acquisition and Haversine distance evaluation in dark appearance;
-- NetInfo connectivity status observation and AppState resume sync triggers;
-- 10-second local OS notification reminder delivery and typed route navigation;
-- HTML PDF report generation and native iOS share sheet invocation.
+- Offline queueing observation;
+- Local 10-second OS notification reminder delivery.
 
-### Android Compatibility
-- Validated via non-interactive Android JavaScript bundle export (`pnpm export:android`);
-- 100% compliant with Expo SDK 54 Android runtime requirements.
+### Implemented & Automated-Tested (Pending Explicit Physical Confirmation)
+- Automatic connectivity recovery sync (`offline` -> `online` transition listener);
+- Native `AppState` active lifecycle sync trigger;
+- Exponential backoff retry policy;
+- Side-by-side conflict resolution UI;
+- Expo Go deep-link handoff (`expo-linking`);
+- Notification tap navigation routing;
+- PDF report generation on physical iPhone;
+- Native share sheet invocation on physical iPhone.
+
+### Android Platform Status
+- Non-interactive Android JavaScript bundle export passes cleanly in CI (`pnpm export:android`);
+- Physical Android native hardware behavior has not been validated.
 
 ---
 
@@ -114,7 +130,7 @@ pnpm install
 pnpm start
 ```
 
-`pnpm start` launches Metro in Expo Go mode (`expo start --go`). Scan the displayed QR code with the Expo Go app on your physical iPhone or Android device.
+`pnpm start` launches Metro in Expo Go mode (`expo start --go`). Scan the displayed QR code with the Expo Go app on your physical iPhone.
 
 ---
 
@@ -122,10 +138,16 @@ pnpm start
 
 - `pnpm lint` — ESLint with Expo flat config and zero warnings allowed
 - `pnpm typecheck` — Strict TypeScript verification (`tsc --noEmit`)
-- `pnpm test:run` — Run all 11 Jest test suites (40 deterministic tests)
+- `pnpm test:run` — Run all 14 Jest test suites (50 deterministic tests)
 - `pnpm run doctor` — Expo project health check (18/18 checks passed)
 - `pnpm export:android` — Non-interactive Android JS bundle export validation
 - `pnpm check` — Complete local quality verification sequence
+
+---
+
+## Screenshots & Repository Enhancement
+
+Application UI renders dynamically on hardware and in development mode. Real screenshots may be added as an optional manual portfolio enhancement without blocking technical completion.
 
 ---
 

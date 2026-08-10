@@ -207,7 +207,6 @@ function TaskDetailContent({
     if (isGeneratingReport) return;
     setIsGeneratingReport(true);
     setReportError(null);
-    triggerSuccessHaptic();
 
     try {
       const pdf = await createInspectionPdfReport({
@@ -217,7 +216,9 @@ function TaskDetailContent({
         task: detail.task,
       });
       const shareRes = await shareInspectionReport(pdf.filePath);
-      if (shareRes.outcome === 'unavailable') {
+      if (shareRes.outcome === 'shared') {
+        triggerSuccessHaptic();
+      } else if (shareRes.outcome === 'unavailable') {
         setReportError(shareRes.reason);
       } else if (shareRes.outcome === 'error') {
         setReportError(shareRes.error);
@@ -270,7 +271,7 @@ function TaskDetailContent({
           <View style={{ flex: 1 }}>
             <Text style={[styles.reportCardTitle, { color: colors.text }]}>Inspection Report</Text>
             <Text style={[styles.reportCardSubtitle, { color: colors.textMuted }]}>
-              Export &amp; share official PDF report with checklist and evidence summary.
+              Export &amp; share local PDF report with checklist and evidence summary.
             </Text>
           </View>
         </View>

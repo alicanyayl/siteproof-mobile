@@ -1,5 +1,6 @@
 import * as Print from 'expo-print';
 
+import { evaluateLocationVerification } from '@/features/location/domain/verificationRule';
 import { escapeHtml } from '@/features/reports/utils/htmlEscape';
 import type { ChecklistItem, InspectionTask, TaskEvidence, TaskLocationCheck } from '@/features/tasks/domain/task';
 
@@ -50,10 +51,32 @@ export function generateInspectionReportHtml(
   `;
 
   if (initialLocationCheck != null) {
-    const isVerified = initialLocationCheck.verified;
-    const badgeColor = isVerified ? '#059669' : '#D97706';
-    const badgeBg = isVerified ? '#ECFDF5' : '#FFFBEB';
-    const statusText = isVerified ? 'Verified On-Site' : 'Outside Verification Area';
+    const { state: evalState } = evaluateLocationVerification({
+      accuracyMeters: initialLocationCheck.accuracyMeters,
+      distanceMeters: initialLocationCheck.distanceMeters,
+      verificationRadiusMeters: initialLocationCheck.verificationRadiusMeters,
+    });
+
+    const statusText =
+      evalState === 'verified'
+        ? 'Verified On-Site'
+        : evalState === 'accuracy_insufficient'
+          ? 'Accuracy Insufficient'
+          : 'Outside Verification Area';
+
+    const badgeColor =
+      evalState === 'verified'
+        ? '#059669'
+        : evalState === 'accuracy_insufficient'
+          ? '#DC2626'
+          : '#D97706';
+
+    const badgeBg =
+      evalState === 'verified'
+        ? '#ECFDF5'
+        : evalState === 'accuracy_insufficient'
+          ? '#FEF2F2'
+          : '#FFFBEB';
 
     locationHtml = `
       <div style="background-color: ${badgeBg}; border: 1px solid ${badgeColor}; border-radius: 8px; padding: 14px; margin-bottom: 20px;">
@@ -110,6 +133,8 @@ export function generateInspectionReportHtml(
       }
     </div>
   `;
+
+  const dueAtFormatted = escapeHtml(new Date(task.dueAt).toLocaleDateString());
 
   return `<!DOCTYPE html>
 <html>
@@ -216,6 +241,7 @@ export function generateInspectionReportHtml(
         <div class="meta-item"><strong>Priority:</strong> ${escapeHtml(task.priority)}</div>
         <div class="meta-item"><strong>Area:</strong> ${escapeHtml(task.area)}</div>
         <div class="meta-item"><strong>Inspection Type:</strong> ${escapeHtml(task.inspectionType)}</div>
+        <div class="meta-item"><strong>Due Date:</strong> ${dueAtFormatted}</div>
       </div>
     </div>
 

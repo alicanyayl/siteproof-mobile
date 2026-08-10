@@ -81,7 +81,7 @@ describe('reportGenerator', () => {
   });
 
   describe('generateInspectionReportHtml', () => {
-    it('generates HTML containing task metadata, checklist, location and evidence summary', () => {
+    it('generates HTML containing task metadata, due date, checklist, and evidence summary', () => {
       const html = generateInspectionReportHtml(sampleReportData, '2026-08-10T10:00:00.000Z');
 
       expect(html).toContain('Structural Steel Pre-Pour Inspection');
@@ -89,6 +89,7 @@ describe('reportGenerator', () => {
       expect(html).toContain('Metro Hub Construction');
       expect(html).toContain('Zone A');
       expect(html).toContain('structural');
+      expect(html).toContain('Due Date:');
       expect(html).toContain('Safety barrier verified');
       expect(html).toContain('Housekeeping clear');
       expect(html).toContain('1/2');
@@ -98,6 +99,36 @@ describe('reportGenerator', () => {
       expect(html).toContain('1 photo');
       expect(html).toContain('EVD-1');
       expect(html).toContain('Generated locally by SiteProof. No remote backend is used.');
+    });
+
+    it('renders "Outside Verification Area" when distance exceeds verification radius', () => {
+      const outsideData: InspectionReportData = {
+        ...sampleReportData,
+        initialLocationCheck: {
+          ...sampleReportData.initialLocationCheck!,
+          accuracyMeters: 10,
+          distanceMeters: 250, // > 100m radius
+          verified: false,
+        },
+      };
+
+      const html = generateInspectionReportHtml(outsideData, '2026-08-10T10:00:00.000Z');
+      expect(html).toContain('Outside Verification Area');
+    });
+
+    it('renders "Accuracy Insufficient" when device GPS accuracy is worse than verification radius', () => {
+      const lowAccuracyData: InspectionReportData = {
+        ...sampleReportData,
+        initialLocationCheck: {
+          ...sampleReportData.initialLocationCheck!,
+          accuracyMeters: 150, // > 100m radius
+          distanceMeters: 20,
+          verified: false,
+        },
+      };
+
+      const html = generateInspectionReportHtml(lowAccuracyData, '2026-08-10T10:00:00.000Z');
+      expect(html).toContain('Accuracy Insufficient');
     });
   });
 

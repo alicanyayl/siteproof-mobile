@@ -5,8 +5,7 @@
 - **Product name:** SiteProof
 - **Repository name:** `siteproof-mobile`
 - **Intended GitHub owner:** `alicanyayl`
-- **Primary platform:** Android
-- **Secondary platform:** iOS
+- **Primary platform:** Cross-platform (iOS and Android)
 - **Technology direction:** React Native with Expo and strict TypeScript
 - **Product type:** Backendless portfolio demonstration
 
@@ -26,7 +25,7 @@ The Phase 1 automated tests validate fixture integrity and UI behavior through t
 
 SiteProof is a focused field-inspection mobile application designed to provide credible, reviewable evidence of practical React Native and Expo engineering. It is a portfolio project, not a commercial field-service platform.
 
-The finished project should demonstrate competent use of native device features, offline-first persistence, lifecycle-aware behavior, deterministic synchronization scenarios, mobile performance practices, and Android-focused real-device validation. Every simulated capability must be clearly identified as a local simulation; the project must never imply that a production backend or remote service exists.
+The finished project should demonstrate competent use of native device features, offline-first persistence, lifecycle-aware behavior, deterministic synchronization scenarios, mobile performance practices, and cross-platform mobile validation. Every simulated capability must be clearly identified as a local simulation; the project must never imply that a production backend or remote service exists.
 
 ## Product Concept
 
@@ -51,9 +50,9 @@ The workflow remains usable without a network connection. Drafts and completed c
 | Offline mutation queue | Record local changes as explicit queued operations | Visible queued, syncing, failed, retrying, completed, and conflicting states |
 | Conflict resolution | Create and resolve a deterministic simulated conflict | UI compares local and simulated remote values and records the selected resolution |
 | Performant mobile lists | Render assigned tasks and sync history efficiently | Stable keys, appropriate list virtualization, controlled re-renders, and responsive interaction under a representative fixture load |
-| Android device behavior | Prioritize Android permission, file, notification, lifecycle, and sharing behavior | Reviewed real-device or suitable development-build results and screenshots |
+| Mobile device behavior | Prioritize cross-platform permission, file, notification, lifecycle, and sharing behavior | Reviewed real-device or suitable development-build results |
 | Haptic feedback | Reinforce selected completion and status actions | Purposeful feedback with graceful behavior where unsupported |
-| Safe-area and platform behavior | Respect device insets and relevant platform differences | Usable layouts across representative Android sizes, with secondary iOS compatibility considered |
+| Safe-area and platform behavior | Respect device insets and relevant platform differences | Usable layouts across representative mobile screen sizes |
 
 ## Main User Flow
 
@@ -106,7 +105,7 @@ Product copy, documentation, demo controls, and UI status labels must describe t
 - **Permission onboarding:** Context and recovery guidance for camera, foreground location, and notification access.
 - **Demo session entry:** A transparent local-demo entry point with no claim of remote authentication.
 - **Assigned task list:** Task status, essential site context, and efficient navigation across representative fixture data.
-- **Task detail and checklist:** Instructions, checklist progress, notes, evidence summary, location state, and save/complete actions.
+- **Task detail and checklist:** Instructions, checklist progress, notes, evidence summary, location state, report action, and save/complete actions.
 - **Camera evidence:** Permission handling, capture, preview, confirmation, and local-file state.
 - **Location verification:** Explicit foreground verification with distance/radius feedback and failure states.
 - **Sync center:** Mutation state, attempts, deterministic processing controls, retry actions, and conflict entry points.
@@ -126,9 +125,9 @@ SQLite is the local source of truth for the demonstration. The planned local mod
 - queued mutations, attempt information, status, and deterministic scenario outcome; and
 - simulated conflict values and the user's recorded resolution.
 
-Task work must be readable and editable without connectivity. A save or completion action persists the inspection transactionally enough to avoid presenting an updated task without its corresponding queued mutation. Generated media and reports remain local files with intentional ownership and cleanup rules to be defined during implementation.
+Task work must be readable and editable without connectivity. A save or completion action persists the inspection transactionally enough to avoid presenting an updated task without its corresponding queued mutation. Generated media and reports remain local files with intentional ownership and cleanup rules defined in code.
 
-The sync simulator consumes local queue entries and applies predetermined outcomes. It is a teaching and demonstration mechanism, not an HTTP client or hidden backend substitute. Seed fixtures and scenario selection must make important states reproducible for development, tests, screenshots, and portfolio review.
+The sync simulator consumes local queue entries and applies predetermined outcomes. It is a teaching and demonstration mechanism, not an HTTP client or hidden backend substitute. Seed fixtures and scenario selection make important states reproducible for development, tests, and portfolio review.
 
 ## Lifecycle and Sync Boundaries
 
@@ -138,9 +137,9 @@ Synchronization is permitted only when the application is active and one of thes
 - the user manually retries or starts processing; or
 - the app returns to the foreground.
 
-The app may also refresh relevant permission and connectivity information after a foreground transition. Queue processing must be idempotent at the simulator boundary and prevent duplicate concurrent processing of the same mutation.
+The app may also refresh relevant permission and connectivity information after a foreground transition. Queue processing is idempotent at the simulator boundary and prevents duplicate concurrent processing of the same mutation.
 
-SiteProof does not promise background location, continuous background synchronization, execution while terminated, or guaranteed delivery. Work safely remains queued until an allowed active-app trigger can process it. Deep links and local-notification interactions must tolerate cold-start or resume navigation and must fail safely when the referenced task is unavailable.
+SiteProof does not promise background location, continuous background synchronization, execution while terminated, or guaranteed delivery. Work safely remains queued until an allowed active-app trigger can process it. Deep links and local-notification interactions tolerate cold-start or resume navigation and fail safely when the referenced task is unavailable.
 
 ## Accessibility and Performance Expectations
 
@@ -152,37 +151,34 @@ SiteProof does not promise background location, continuous background synchroniz
 - Use accessible status announcements for important asynchronous changes such as capture, verification, queue failure, and report completion.
 - Use React Native list virtualization and stable item identity for task and queue lists.
 - Avoid unnecessary list-row re-renders and avoid loading full-resolution images where thumbnails are sufficient.
-- Keep local database queries bounded and observable under a representative high-volume fixture set.
-- Review responsiveness, permission flows, notifications, camera, files, sharing, and lifecycle behavior on Android hardware or an appropriate Android development build; treat iOS as the secondary compatibility target.
+- Keep local database queries bounded and observable under a representative fixture set.
+- Review responsiveness, permission flows, notifications, camera, files, sharing, and lifecycle behavior on iOS and Android hardware or development builds.
 
 ## Phase Plan
 
 ### Phase 0 — Foundation
 
-Establish the Expo project foundation, now aligned to Expo SDK 54 for App Store Expo Go compatibility, with Expo Router, strict TypeScript, a basic visual system, CNG configuration, deterministic test setup, GitHub Actions, and repository metadata. SQLite initialization moves to Phase 1 so Phase 0 remains a focused application foundation.
+Establish the Expo project foundation, aligned to Expo SDK 54 for App Store Expo Go compatibility, with Expo Router, strict TypeScript, a basic visual system, CNG configuration, deterministic test setup, GitHub Actions, and repository metadata.
 
 ### Phase 1 — Offline task domain
 
-Implemented: task fixtures, validated domain schemas, a repository layer, SQLite persistence, the assigned-task list, task detail, and saved draft checklist progress.
+Implemented: task fixtures, validated domain schemas, a repository layer, SQLite persistence, assigned-task list, task detail, and immediately persisted checklist draft progress.
 
 ### Phase 2 — Native evidence
 
-Implemented and physically verified: contextual pre-permission flows, CameraView rear photo capture, preview/retake/accept UI, persistent document photo storage using SDK 54 FileSystem API, migration v2 SQLite tables for evidence and location checks, pure TypeScript Haversine distance calculations and accuracy evaluation rules, and foreground location verification on a physical iPhone 16 running Expo Go SDK 54 in dark mode. Feedback haptic triggers are implemented in code but pending conscious physical user confirmation.
-
-
+Implemented and physically verified on iPhone 16: contextual pre-permission flows, CameraView rear photo capture, preview/retake/accept UI, persistent document photo storage using SDK 54 FileSystem API, migration v2 SQLite tables, Haversine distance calculations, verification rules, and foreground location verification in dark mode. Feedback haptic triggers are implemented in code.
 
 ### Phase 3 — Lifecycle and synchronization
 
-Implemented in code & verified via automated tests: real NetInfo device connectivity monitoring, database migration v3 durable `sync_queue` outbox, outbox mutation coalescing, AppState active lifecycle sync triggers, local Simulated Server version matching engine, conflict injection and failure simulation controls, exponential backoff retry policy, Sync Center UI (`/sync`), Conflict Resolution UI (`/sync/conflicts/[conflictId]`), 10-second local OS notification reminders (`expo-notifications`), and Expo Go deep-link demonstration (`expo-linking`). Physical device checkpoint validation is pending user hardware test.
-
+Implemented and verified via automated tests: real NetInfo device connectivity monitoring, database migration v3 durable `sync_queue` outbox, outbox mutation coalescing, AppState active lifecycle sync triggers, local Simulated Server engine, conflict injection and failure simulation controls, exponential backoff retry policy, Sync Center UI, Conflict Resolution UI, 10-second local OS notification reminders, and Expo Go deep links. Physical device verification confirmed offline queueing and local notification delivery; other lifecycle/sync triggers remain implemented & automated-tested.
 
 ### Phase 4 — Reporting and mobile quality
 
-Implemented and verified: HTML inspection report generator with safe HTML escaping, PDF report creation via SDK 54 `expo-print`, native PDF sharing via SDK 54 `expo-sharing`, restrained native entrance animations and loading motion using React Native `Animated`, accessibility & Reduce Motion support via `AccessibilityInfo.isReduceMotionEnabled()` and `reduceMotionChanged` subscription, and responsive narrow mobile layout hardening.
+Implemented and verified: HTML inspection report generator with safe HTML escaping, PDF report creation via SDK 54 `expo-print`, native PDF sharing via SDK 54 `expo-sharing`, restrained native entrance animations and loading motion using React Native `Animated`, accessibility & Reduce Motion support via `AccessibilityInfo.isReduceMotionEnabled()` and `reduceMotionChanged` subscription, and responsive mobile layout hardening. Physical iPhone PDF/share confirmation remains pending user hardware test.
 
 ### Phase 5 — Finalization
 
-Implemented and verified: 100% test coverage across deterministic Jest suites, Expo Doctor 18/18 checks passed, Android JavaScript export validation, Metro Expo Go startup verification, concise cross-platform portfolio README with truthful Real vs Simulated matrix, architecture documentation, MIT license, GitHub repository metadata, committed, pushed to `origin/main`, and green GitHub Actions CI. Project complete.
+Implemented and verified: all configured deterministic Jest suites pass (14/14 suites, 50 tests), Expo Doctor 18/18 checks passed, Android JavaScript export validation (`pnpm export:android`), Metro Expo Go startup verification, concise cross-platform portfolio README with truthful Real vs Simulated matrix, architecture documentation, MIT license, GitHub repository metadata, committed, pushed to `origin/main`, and green GitHub Actions CI. Project complete.
 
 ## Explicit Non-Goals
 
@@ -200,13 +196,13 @@ The initial project will not include:
 - route navigation;
 - a social layer;
 - analytics or telemetry; or
-- App Store or Google Play submission during initial implementation.
+- App Store or Google Play submission.
 
 ## Completion Criteria
 
 SiteProof is complete as a portfolio demonstration when:
 
-- the primary flow can be performed on the Android target, including while offline;
+- the primary flow can be performed on mobile targets, including while offline;
 - all capabilities in the proof matrix have reviewable implementation evidence or an explicitly documented limitation;
 - task, checklist, notes, evidence metadata, verification results, and mutations survive application relaunch through SQLite;
 - camera, foreground location, and notification permission outcomes are handled without trapping the user;
@@ -217,28 +213,21 @@ SiteProof is complete as a portfolio demonstration when:
 - representative task and queue fixture loads remain responsive;
 - core flows receive an accessibility review and material findings are addressed or documented;
 - automated checks appropriate to the project pass locally and in GitHub Actions;
-- Android-focused screenshots and build verification support the portfolio claims;
+- build verification supports the portfolio claims;
 - the README and architecture documentation accurately distinguish real device behavior from local simulation; and
-- the repository is committed, pushed to its intended owner when authorized in a later phase, and clean at final verification.
-
-For Phase 0 specifically, completion means the verified Expo application foundation, tests, quality commands, Expo Go-compatible development workflow, CI workflow, concise documentation, and license are committed on `main`. Native inspection capabilities remain out of scope until their assigned phases.
-
-For Phase 1 specifically, completion means the deterministic offline task fixtures, versioned SQLite schema, repository boundary, assigned-task list, task detail route, immediately persisted checklist draft state, automated tests, documentation, and Android bundle validation are committed on `main`. Device-level persistence evidence remains distinct from local automated checks.
+- the repository is committed, pushed to `origin/main`, and clean at final verification.
 
 ## Risks and Scope Controls
 
 | Risk | Scope control |
 | --- | --- |
 | The simulator could be mistaken for a real backend | Label simulated authentication, API, uploads, synchronization, conflicts, and push behavior in UI and documentation |
-| Native behavior may differ in Expo Go, development builds, emulators, and hardware | Identify build constraints early and verify portfolio claims on an appropriate Android development build and real device where required |
+| Native behavior may differ in Expo Go, development builds, emulators, and hardware | Identify build constraints early and verify portfolio claims on an appropriate development build or real device |
 | Permission denial can block the demonstration | Provide contextual requests, denial states, settings guidance, and graceful alternatives where the flow permits |
 | Local files may become orphaned or unavailable | Define file ownership, persistence, validation, and cleanup when native evidence is implemented |
 | Queue or lifecycle races may duplicate work | Serialize eligible processing, persist attempts and states, and make deterministic operations idempotent |
 | Offline scope may expand into production synchronization | Keep all outcomes fixture-driven and exclude real networking, accounts, uploads, and multi-device guarantees |
 | Conflict UI may imply server authority | Use explicitly simulated remote values and explain how the deterministic scenario was produced |
-| Feature breadth may weaken portfolio quality | Deliver phase gates in order, prioritize the main flow and Android evidence, and defer anything in the non-goals |
-| Large images or lists may harm mobile responsiveness | Use thumbnails and bounded image work, virtualized lists, representative load fixtures, and performance review in Phase 4 |
-| Secondary-platform work may dilute the primary target | Treat Android behavior as the acceptance baseline and iOS as secondary compatibility work |
+| Feature breadth may weaken portfolio quality | Deliver phase gates in order, prioritize the main flow, and defer non-goals |
+| Large images or lists may harm mobile responsiveness | Use thumbnails and bounded image work, virtualized lists, representative load fixtures, and performance review |
 | Sensitive or misleading data could enter fixtures or reports | Use synthetic inspection data only and keep generated artifacts free of real personal or customer information |
-
-Any expansion beyond this brief requires an explicit scope decision. In particular, adding a backend, background execution promise, store submission, or operational field-service feature is a separate project decision rather than an implementation detail.
