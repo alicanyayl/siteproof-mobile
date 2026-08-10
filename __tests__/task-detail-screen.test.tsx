@@ -79,4 +79,41 @@ describe('<TaskDetailScreen />', () => {
     expect(await screen.findByRole('header', { name: 'Task not found' })).toBeVisible();
     expect(screen.getByText('No local inspection matches INS-99999.')).toBeVisible();
   });
+
+  it('renders photo evidence section and location verification section', async () => {
+    const detail = createTaskDetail();
+    const repository = createFakeTaskRepository({
+      getLatestLocationCheck: async () => ({
+        accuracyMeters: 5,
+        createdAt: new Date().toISOString(),
+        distanceMeters: 12,
+        id: 'LOC-1',
+        latitude: detail.task.latitude,
+        longitude: detail.task.longitude,
+        taskId: detail.task.id,
+        verificationRadiusMeters: detail.task.verificationRadiusMeters,
+        verified: true,
+      }),
+      getTaskDetail: async () => detail,
+      listEvidenceForTask: async () => [
+        {
+          createdAt: new Date().toISOString(),
+          fileUri: 'file:///fake/path/evidence1.jpg',
+          id: 'EVD-1',
+          taskId: detail.task.id,
+        },
+      ],
+    });
+
+    await render(
+      <TaskDetailScreen onBack={jest.fn()} repository={repository} taskId={detail.task.id} />,
+    );
+
+    expect(await screen.findByRole('header', { name: 'Photo evidence' })).toBeVisible();
+    expect(screen.getByRole('header', { name: 'Location verification' })).toBeVisible();
+    expect(screen.getByText('Verified')).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Add photo evidence' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Verify location' })).toBeVisible();
+  });
 });
+

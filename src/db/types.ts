@@ -22,3 +22,23 @@ export type TaskRow = {
   updatedAt: string;
   verificationRadiusMeters: number;
 };
+
+export type TaskEvidenceRow = {
+  createdAt: string;
+  fileUri: string;
+  id: string;
+  taskId: string;
+};
+
+export type TaskLocationCheckRow = {
+  accuracyMeters: number | null;
+  createdAt: string;
+  distanceMeters: number;
+  id: string;
+  latitude: number;
+  longitude: number;
+  taskId: string;
+  verificationRadiusMeters: number;
+  verified: number;
+};
+

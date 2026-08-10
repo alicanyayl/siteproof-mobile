@@ -167,7 +167,8 @@ Implemented: task fixtures, validated domain schemas, a repository layer, SQLite
 
 ### Phase 2 — Native evidence
 
-Implement contextual permission flows, camera capture, foreground location verification, local photo-file management, and haptic feedback.
+Implemented in code: contextual pre-permission flows, CameraView rear photo capture, preview/retake/accept UI, persistent document photo storage using SDK 54 FileSystem API, migration v2 SQLite tables for evidence and location checks, pure TypeScript Haversine distance calculations and accuracy evaluation rules, foreground location verification, and feedback haptics.
+
 
 ### Phase 3 — Lifecycle and synchronization
 

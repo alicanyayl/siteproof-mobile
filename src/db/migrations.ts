@@ -3,7 +3,7 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 import { seedDatabase } from '@/db/seed';
 
 export const DATABASE_NAME = 'siteproof.db';
-export const DATABASE_VERSION = 1;
+export const DATABASE_VERSION = 2;
 
 const migrationVersionOne = `
   CREATE TABLE IF NOT EXISTS tasks (
@@ -37,6 +37,32 @@ const migrationVersionOne = `
   CREATE INDEX IF NOT EXISTS index_checklist_items_task_position ON checklist_items(task_id, position);
 `;
 
+const migrationVersionTwo = `
+  CREATE TABLE IF NOT EXISTS task_evidence (
+    id TEXT PRIMARY KEY NOT NULL,
+    task_id TEXT NOT NULL,
+    file_uri TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS task_location_checks (
+    id TEXT PRIMARY KEY NOT NULL,
+    task_id TEXT NOT NULL,
+    latitude REAL NOT NULL,
+    longitude REAL NOT NULL,
+    accuracy_meters REAL,
+    distance_meters REAL NOT NULL,
+    verification_radius_meters REAL NOT NULL,
+    verified INTEGER NOT NULL CHECK (verified IN (0, 1)),
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
+  );
+
+  CREATE INDEX IF NOT EXISTS index_task_evidence_task_id_created_at ON task_evidence(task_id, created_at);
+  CREATE INDEX IF NOT EXISTS index_task_location_checks_task_id_created_at ON task_location_checks(task_id, created_at);
+`;
+
 export async function initializeDatabase(db: SQLiteDatabase): Promise<void> {
   await db.execAsync('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;');
 
@@ -50,9 +76,17 @@ export async function initializeDatabase(db: SQLiteDatabase): Promise<void> {
   if (currentVersion < 1) {
     await db.withTransactionAsync(async () => {
       await db.execAsync(migrationVersionOne);
+      await db.execAsync('PRAGMA user_version = 1');
+    });
+  }
+
+  if (currentVersion < 2) {
+    await db.withTransactionAsync(async () => {
+      await db.execAsync(migrationVersionTwo);
       await db.execAsync(`PRAGMA user_version = ${DATABASE_VERSION}`);
     });
   }
 
   await seedDatabase(db);
 }
+

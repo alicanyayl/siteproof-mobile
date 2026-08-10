@@ -71,15 +71,51 @@ export type InspectionTask = z.infer<typeof inspectionTaskSchema>;
 export type TaskPriority = z.infer<typeof taskPrioritySchema>;
 export type TaskStatus = z.infer<typeof taskStatusSchema>;
 
+export const taskEvidenceSchema = z.object({
+  createdAt: z.string().datetime({ offset: true }),
+  fileUri: z.string().min(1),
+  id: z.string().min(1),
+  taskId: z.string().regex(/^INS-\d{5}$/),
+});
+
+export const taskLocationCheckSchema = z.object({
+  accuracyMeters: z.number().nonnegative().nullable(),
+  createdAt: z.string().datetime({ offset: true }),
+  distanceMeters: z.number().nonnegative(),
+  id: z.string().min(1),
+  latitude: z.number().min(-90).max(90),
+  longitude: z.number().min(-180).max(180),
+  taskId: z.string().regex(/^INS-\d{5}$/),
+  verificationRadiusMeters: z.number().positive(),
+  verified: z.boolean(),
+});
+
+export type TaskEvidence = z.infer<typeof taskEvidenceSchema>;
+export type TaskLocationCheck = z.infer<typeof taskLocationCheckSchema>;
+
 export type TaskDetail = {
   checklist: ChecklistItem[];
   task: InspectionTask;
 };
 
 export interface TaskRepository {
+  addEvidence(evidence: { fileUri: string; id?: string; taskId: string }): Promise<TaskEvidence>;
+  addLocationCheck(check: {
+    accuracyMeters: number | null;
+    distanceMeters: number;
+    id?: string;
+    latitude: number;
+    longitude: number;
+    taskId: string;
+    verificationRadiusMeters: number;
+    verified: boolean;
+  }): Promise<TaskLocationCheck>;
   getChecklistForTask(taskId: string): Promise<ChecklistItem[]>;
+  getLatestLocationCheck(taskId: string): Promise<TaskLocationCheck | null>;
   getTaskById(taskId: string): Promise<InspectionTask | null>;
   getTaskDetail(taskId: string): Promise<TaskDetail | null>;
   listAssignedTasks(): Promise<InspectionTask[]>;
+  listEvidenceForTask(taskId: string): Promise<TaskEvidence[]>;
   setChecklistItemChecked(itemId: string, checked: boolean): Promise<void>;
 }
+

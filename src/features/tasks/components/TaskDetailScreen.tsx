@@ -12,10 +12,18 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { EvidenceSection } from '@/features/evidence/components/EvidenceSection';
+import { LocationSection } from '@/features/location/components/LocationSection';
 import { ChecklistRow } from '@/features/tasks/components/ChecklistRow';
 import { formatDueAt } from '@/features/tasks/components/TaskCard';
 import { PriorityBadge, StatusBadge } from '@/features/tasks/components/TaskBadges';
-import type { ChecklistItem, TaskDetail, TaskRepository } from '@/features/tasks/domain/task';
+import type {
+  ChecklistItem,
+  TaskDetail,
+  TaskEvidence,
+  TaskLocationCheck,
+  TaskRepository,
+} from '@/features/tasks/domain/task';
 import { getColors, radii, spacing, typography } from '@/theme';
 
 type TaskDetailScreenProps = {
@@ -28,7 +36,12 @@ type DetailState =
   | { kind: 'error' }
   | { kind: 'loading' }
   | { kind: 'notFound' }
-  | { detail: TaskDetail; kind: 'ready' };
+  | {
+      detail: TaskDetail;
+      evidenceList: TaskEvidence[];
+      initialLocationCheck: TaskLocationCheck | null;
+      kind: 'ready';
+    };
 
 type SaveState = 'error' | 'idle' | 'saved' | 'saving';
 
@@ -45,10 +58,18 @@ export function TaskDetailScreen({ onBack, repository, taskId }: TaskDetailScree
   useEffect(() => {
     let active = true;
 
-    repository.getTaskDetail(taskId).then(
-      (detail) => {
+    Promise.all([
+      repository.getTaskDetail(taskId),
+      repository.listEvidenceForTask(taskId),
+      repository.getLatestLocationCheck(taskId),
+    ]).then(
+      ([detail, evidenceList, initialLocationCheck]) => {
         if (active) {
-          setState(detail == null ? { kind: 'notFound' } : { detail, kind: 'ready' });
+          setState(
+            detail == null
+              ? { kind: 'notFound' }
+              : { detail, evidenceList, initialLocationCheck, kind: 'ready' },
+          );
         }
       },
       () => {
@@ -80,12 +101,16 @@ export function TaskDetailScreen({ onBack, repository, taskId }: TaskDetailScree
 
       try {
         await repository.setChecklistItemChecked(item.id, !item.checked);
-        const detail = await repository.getTaskDetail(taskId);
+        const [detail, evidenceList, initialLocationCheck] = await Promise.all([
+          repository.getTaskDetail(taskId),
+          repository.listEvidenceForTask(taskId),
+          repository.getLatestLocationCheck(taskId),
+        ]);
         if (detail == null) {
           setState({ kind: 'notFound' });
           setSaveState('idle');
         } else {
-          setState({ detail, kind: 'ready' });
+          setState({ detail, evidenceList, initialLocationCheck, kind: 'ready' });
           setSaveState('saved');
         }
       } catch {
@@ -128,7 +153,10 @@ export function TaskDetailScreen({ onBack, repository, taskId }: TaskDetailScree
           <TaskDetailContent
             colors={colors}
             detail={state.detail}
+            evidenceList={state.evidenceList}
+            initialLocationCheck={state.initialLocationCheck}
             onToggle={handleToggle}
+            repository={repository}
             saveState={saveState}
             savingItemId={savingItemId}
           />
@@ -141,13 +169,19 @@ export function TaskDetailScreen({ onBack, repository, taskId }: TaskDetailScree
 function TaskDetailContent({
   colors,
   detail,
+  evidenceList,
+  initialLocationCheck,
   onToggle,
+  repository,
   saveState,
   savingItemId,
 }: {
   colors: ReturnType<typeof getColors>;
   detail: TaskDetail;
+  evidenceList: TaskEvidence[];
+  initialLocationCheck: TaskLocationCheck | null;
   onToggle: (item: ChecklistItem) => void;
+  repository: TaskRepository;
   saveState: SaveState;
   savingItemId: string | null;
 }) {
@@ -219,12 +253,13 @@ function TaskDetailContent({
         </View>
       </View>
 
-      <View style={[styles.phaseBoundary, { borderColor: colors.border }]}>
-        <Text style={[styles.phaseBoundaryText, { color: colors.textMuted }]}>Task completion and device evidence are intentionally reserved for later phases.</Text>
-      </View>
+      <EvidenceSection evidenceList={evidenceList} taskId={task.id} />
+
+      <LocationSection initialCheck={initialLocationCheck} repository={repository} task={task} />
     </View>
   );
 }
+
 
 function DetailLoading({ colors }: { colors: ReturnType<typeof getColors> }) {
   return (
