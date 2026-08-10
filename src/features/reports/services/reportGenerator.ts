@@ -1,18 +1,25 @@
 import * as Print from 'expo-print';
 
 import { escapeHtml } from '@/features/reports/utils/htmlEscape';
-import type { TaskDetail, TaskEvidence } from '@/features/tasks/domain/task';
+import type { ChecklistItem, InspectionTask, TaskEvidence, TaskLocationCheck } from '@/features/tasks/domain/task';
 
 export type GeneratedReport = {
   filePath: string;
   generatedAtIso: string;
 };
 
+export type InspectionReportData = {
+  checklist: ChecklistItem[];
+  evidenceList?: TaskEvidence[];
+  initialLocationCheck?: TaskLocationCheck | null;
+  task: InspectionTask;
+};
+
 export function generateInspectionReportHtml(
-  detail: TaskDetail,
+  data: InspectionReportData,
   generatedAtIso: string = new Date().toISOString(),
 ): string {
-  const { task, checklist, evidenceList, initialLocationCheck } = detail;
+  const { task, checklist, evidenceList, initialLocationCheck } = data;
   const completedCount = checklist.filter((item) => item.checked).length;
   const totalCount = checklist.length;
   const completionPercentage = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
@@ -240,10 +247,10 @@ export function generateInspectionReportHtml(
 }
 
 export async function createInspectionPdfReport(
-  detail: TaskDetail,
+  data: InspectionReportData,
   generatedAtIso?: string,
 ): Promise<GeneratedReport> {
-  const html = generateInspectionReportHtml(detail, generatedAtIso);
+  const html = generateInspectionReportHtml(data, generatedAtIso);
   const result = await Print.printToFileAsync({ html });
   return {
     filePath: result.uri,

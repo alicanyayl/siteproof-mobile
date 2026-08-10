@@ -3,16 +3,16 @@ import * as Print from 'expo-print';
 import {
   createInspectionPdfReport,
   generateInspectionReportHtml,
+  type InspectionReportData,
 } from '@/features/reports/services/reportGenerator';
 import { escapeHtml } from '@/features/reports/utils/htmlEscape';
-import type { TaskDetail } from '@/features/tasks/domain/task';
 
 jest.mock('expo-print', () => ({
   printToFileAsync: jest.fn().mockResolvedValue({ uri: 'file:///app/cache/report.pdf' }),
 }));
 
 describe('reportGenerator', () => {
-  const sampleTaskDetail: TaskDetail = {
+  const sampleReportData: InspectionReportData = {
     checklist: [
       {
         checked: true,
@@ -82,7 +82,7 @@ describe('reportGenerator', () => {
 
   describe('generateInspectionReportHtml', () => {
     it('generates HTML containing task metadata, checklist, location and evidence summary', () => {
-      const html = generateInspectionReportHtml(sampleTaskDetail, '2026-08-10T10:00:00.000Z');
+      const html = generateInspectionReportHtml(sampleReportData, '2026-08-10T10:00:00.000Z');
 
       expect(html).toContain('Structural Steel Pre-Pour Inspection');
       expect(html).toContain('INS-10044');
@@ -91,7 +91,7 @@ describe('reportGenerator', () => {
       expect(html).toContain('structural');
       expect(html).toContain('Safety barrier verified');
       expect(html).toContain('Housekeeping clear');
-      expect(html).toContain('1 of 2 checked');
+      expect(html).toContain('1/2');
       expect(html).toContain('50%');
       expect(html).toContain('Verified On-Site');
       expect(html).toContain('18.2 m');
@@ -103,7 +103,7 @@ describe('reportGenerator', () => {
 
   describe('createInspectionPdfReport', () => {
     it('invokes Print.printToFileAsync with generated HTML', async () => {
-      const report = await createInspectionPdfReport(sampleTaskDetail, '2026-08-10T10:00:00.000Z');
+      const report = await createInspectionPdfReport(sampleReportData, '2026-08-10T10:00:00.000Z');
 
       expect(Print.printToFileAsync).toHaveBeenCalledWith({
         html: expect.stringContaining('SITEPROOF'),

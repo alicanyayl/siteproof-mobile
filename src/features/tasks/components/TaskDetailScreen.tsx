@@ -210,7 +210,12 @@ function TaskDetailContent({
     triggerSuccessHaptic();
 
     try {
-      const pdf = await createInspectionPdfReport(detail);
+      const pdf = await createInspectionPdfReport({
+        checklist: detail.checklist,
+        evidenceList,
+        initialLocationCheck,
+        task: detail.task,
+      });
       const shareRes = await shareInspectionReport(pdf.filePath);
       if (shareRes.outcome === 'unavailable') {
         setReportError(shareRes.reason);
