@@ -26,13 +26,42 @@ Phase 2 implements native inspection evidence:
 - foreground location acquisition (`expo-location`) comparing device coordinates to task target sites; and
 - feedback haptics (`expo-haptics`) for photo acceptance and location evaluation results.
 
-Note: All evidence photos remain local to the Expo Go project/device environment; no remote upload service exists.
+Phase 3 implements lifecycle-aware offline synchronization:
+
+- durable outbox queue (`sync_queue`) created in database migration version 3;
+- local-first mutation enqueuing (checklist updates, evidence metadata, location checks) within the same SQLite transaction;
+- checklist mutation coalescing (repeated unsent toggles update the existing pending queue item while preserving base version);
+- real device connectivity observation via `@react-native-community/netinfo`;
+- native `AppState` active lifecycle triggers invoking synchronization attempts on foreground resume;
+- deterministic local Simulated Server engine (`simulated_remote_checklist`) version matching;
+- reproducible conflict injection ("Inject remote checklist change") and failure simulation ("Fail next request");
+- pure exponential backoff retry policy (2s, 5s, 15s, 60s max) with recorded attempt counts and error messages;
+- Sync Center UI route (`/sync`) displaying real network status, queue counts, manual sync, and simulation controls;
+- Conflict Resolution route (`/sync/conflicts/[conflictId]`) allowing users to inspect version mismatches side-by-side and choose "Keep local" vs "Use simulated server";
+- local OS notification reminders (`expo-notifications`) scheduled for 10 seconds, with typed response routing back to Sync Center; and
+- Expo Go deep-link demonstration generating current session `exp://` links via `expo-linking`.
+
+Note: All evidence photo files remain local to the device; no remote file upload service exists. The server and remote versions are explicit local SQLite simulations.
 
 The current baseline uses Expo SDK 54.0.36, React Native 0.81.5, React 19.1.0, TypeScript 5.9.3, Node.js 22 (`>=22.13 <23`), and pnpm 10.30.0. SDK 54 is a deliberate Expo Go compatibility choice for physical-device portfolio validation; it is not presented as technically superior to SDK 57. Continuous Native Generation is used, so generated `android/` and `ios/` projects are not committed.
 
+## Truthfulness & System Architecture Matrix
+
+| Capability / Layer | Reality Level | Implementation Details |
+| :--- | :--- | :--- |
+| **Local Database & Storage** | **REAL** | Versioned SQLite database (`siteproof.db`, migration v1-v3) with WAL journal mode. Persistent photo storage under `Paths.document`. |
+| **Outbox Queue Persistence** | **REAL** | Durable `sync_queue` table in SQLite. Local edits write to local tables and enqueue outbox mutations in the same transaction. |
+| **Device Connectivity** | **REAL** | Native device network monitoring via `@react-native-community/netinfo` observing `online` / `offline` / `unknown` states. |
+| **AppState Lifecycle** | **REAL** | Native React Native `AppState` listener triggering sync attempts when application transitions to `active`. |
+| **Local Notifications** | **REAL** | Local OS notifications scheduled via `expo-notifications` with response listener routing back to Sync Center. |
+| **Deep Link Routing** | **REAL (Expo Go)** | Session-specific `exp://` deep links generated via `expo-linking` for Expo Go. In standalone builds, configured `siteproof://` scheme provides stable app links. |
+| **Simulated Server** | **SIMULATED** | Local SQLite table `simulated_remote_checklist` simulating remote server state and version numbers. |
+| **Server Conflicts & Errors** | **SIMULATED** | Deterministic version mismatch detection and failure flag (`fail_next_request`) for demonstrating offline retries and conflict resolution. |
+| **Photo Upload** | **LOCAL ONLY** | No image bytes are uploaded to any server. Queue payloads carry local evidence metadata only. |
+
 ## Physical device verification
 
-The Phase 2 native inspection evidence workflow has been physically exercised and verified on hardware:
+The Phase 2 native evidence workflow has been physically exercised and verified on hardware:
 
 - **Target hardware:** iPhone 16
 - **Runtime:** App Store Expo Go (Expo SDK 54)
@@ -47,15 +76,16 @@ The Phase 2 native inspection evidence workflow has been physically exercised an
 - Location evaluation correctly identified an out-of-range position (e.g. 350.86 km from synthetic target coordinate, ±12 m device accuracy, 75 m required radius -> evaluated as *Outside inspection area*); and
 - Task target coordinates are synthetic test fixtures; physical location values are verified without exposing sensitive device coordinates.
 
-### Implemented in code, pending explicit physical confirmation
-- Haptic feedback (`expo-haptics`) is implemented for photo acceptance and location evaluation, but physical haptic feel was not consciously evaluated during the test run;
-- Permission-denied recovery screens, system Settings redirection, poor-accuracy edge states, light appearance, and invalid route handling are covered by automated unit tests but have not been physically exercised on hardware.
+### Phase 3 capabilities pending physical user validation
+- Offline queueing during airplane mode, connection recovery auto-sync, AppState resume sync trigger, retry backoff on simulated failure, conflict injection & resolution UI ("Keep local" vs "Use simulated server"), local 10-second OS notification reminder, and Expo Go deep-link navigation are fully covered by automated unit tests and ready for physical device checkpoint validation.
 
 ## Offline architecture
 
-`SQLiteProvider` initializes `siteproof.db` before application routes render. Migration version 1 creates `tasks` and `checklist_items`, while migration version 2 adds `task_evidence` and `task_location_checks`. UI code reads and updates data through `TaskRepository`; route parameters carry only a task ID. Checking an item or adding evidence writes state immediately to SQLite.
+`SQLiteProvider` initializes `siteproof.db` before application routes render. Migration v1 creates `tasks` and `checklist_items`, migration v2 adds `task_evidence` and `task_location_checks`, and migration v3 adds `sync_queue`, `simulated_remote_checklist`, `sync_conflicts`, and `sync_simulation_flags`.
 
-Automated tests validate fixture integrity, list behavior, typed repository interactions, Haversine calculations, location verification rules, evidence storage, camera route task validation, checklist accessibility state, and saved-state reloads.
+UI code reads and updates data through `TaskRepository`; checking an item or adding evidence writes state immediately to SQLite and enqueues an outbox mutation.
+
+Automated tests validate fixture integrity, list behavior, typed repository interactions, Haversine calculations, location verification rules, evidence storage, camera route task validation, NetInfo status mapping, retry backoff calculation, outbox coalescing, conflict detection/resolution, notification payload schema, and saved-state reloads.
 
 ## Local setup
 
@@ -80,12 +110,13 @@ pnpm start
 
 ## Capability status
 
-Implemented now: the Expo/React Native foundation, Expo Go development workflow, typed routing, accessible and responsive light/dark UI, automated tests and CI, Phase 1 local task/checklist domain backed by SQLite, and Phase 2 native photo evidence, persistent file storage, foreground location verification, Haversine distance, and haptic feedback.
+Implemented now: Expo foundation, Expo Go development workflow, typed routing, light/dark UI, automated tests and CI, Phase 1 offline task/checklist domain, Phase 2 native photo evidence & location verification, and Phase 3 durable outbox queue, real NetInfo connectivity observation, AppState lifecycle sync triggers, local Simulated Server engine, conflict resolution UI, local notifications, and deep linking.
 
-Phase 3 lifecycle synchronization (connectivity state, mutation queue, retry policy, simulated conflicts, local notifications) and Phase 4 reporting remain outstanding. Remote services will remain explicit local simulations where the [project brief](docs/PROJECT_BRIEF.md) requires them.
+Phase 4 reporting and final portfolio showcase polish remain outstanding.
 
 ## License
 
 SiteProof is available under the [MIT License](LICENSE).
+
 
 

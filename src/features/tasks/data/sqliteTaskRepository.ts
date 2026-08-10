@@ -138,6 +138,56 @@ export class SQLiteTaskRepository implements TaskRepository {
         updatedAt,
         item.taskId,
       );
+
+      // Outbox Pattern: Coalesce or Insert sync_queue mutation
+      const existingQueue = await this.db.getFirstAsync<{ id: string; baseVersion: number | null }>(
+        `SELECT id, base_version AS baseVersion
+         FROM sync_queue
+         WHERE entity_id = ? AND mutation_type = 'checklist_update' AND status IN ('pending', 'failed')
+         ORDER BY created_at DESC
+         LIMIT 1`,
+        itemId,
+      );
+
+      const payloadJson = JSON.stringify({ checked, itemId });
+
+      if (existingQueue != null) {
+        // Coalesce into existing unsent mutation, keeping original base_version
+        await this.db.runAsync(
+          `UPDATE sync_queue
+           SET payload_json = ?,
+               status = 'pending',
+               attempt_count = 0,
+               next_attempt_at = NULL,
+               last_error = NULL,
+               updated_at = ?
+           WHERE id = ?`,
+          payloadJson,
+          updatedAt,
+          existingQueue.id,
+        );
+      } else {
+        // Fetch current remote version from simulated_remote_checklist
+        const remoteRow = await this.db.getFirstAsync<{ version: number }>(
+          'SELECT version FROM simulated_remote_checklist WHERE item_id = ?',
+          itemId,
+        );
+        const baseVersion = remoteRow?.version ?? 1;
+
+        const queueId = `SEQ-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+        await this.db.runAsync(
+          `INSERT INTO sync_queue (
+             id, mutation_type, entity_id, task_id, payload_json, base_version, status, attempt_count, created_at, updated_at
+           ) VALUES (?, 'checklist_update', ?, ?, ?, ?, 'pending', 0, ?, ?)`,
+          queueId,
+          itemId,
+          item.taskId,
+          payloadJson,
+          baseVersion,
+          updatedAt,
+          updatedAt,
+        );
+      }
     });
   }
 
@@ -165,14 +215,32 @@ export class SQLiteTaskRepository implements TaskRepository {
     const id = evidence.id ?? `${evidence.taskId}-EVD-${Date.now()}`;
     const createdAt = new Date().toISOString();
 
-    await this.db.runAsync(
-      `INSERT INTO task_evidence (id, task_id, file_uri, created_at)
-       VALUES (?, ?, ?, ?)`,
-      id,
-      evidence.taskId,
-      evidence.fileUri,
-      createdAt,
-    );
+    await this.db.withTransactionAsync(async () => {
+      await this.db.runAsync(
+        `INSERT INTO task_evidence (id, task_id, file_uri, created_at)
+         VALUES (?, ?, ?, ?)`,
+        id,
+        evidence.taskId,
+        evidence.fileUri,
+        createdAt,
+      );
+
+      // Outbox Pattern: metadata payload without raw photo bytes
+      const queueId = `SEQ-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+      const payloadJson = JSON.stringify({ createdAt, evidenceId: id, fileUri: evidence.fileUri });
+
+      await this.db.runAsync(
+        `INSERT INTO sync_queue (
+           id, mutation_type, entity_id, task_id, payload_json, base_version, status, attempt_count, created_at, updated_at
+         ) VALUES (?, 'evidence_added', ?, ?, ?, NULL, 'pending', 0, ?, ?)`,
+        queueId,
+        id,
+        evidence.taskId,
+        payloadJson,
+        createdAt,
+        createdAt,
+      );
+    });
 
     return mapTaskEvidenceRow({
       createdAt,
@@ -217,28 +285,51 @@ export class SQLiteTaskRepository implements TaskRepository {
     const id = check.id ?? `${check.taskId}-LOC-${Date.now()}`;
     const createdAt = new Date().toISOString();
 
-    await this.db.runAsync(
-      `INSERT INTO task_location_checks (
-         id,
-         task_id,
-         latitude,
-         longitude,
-         accuracy_meters,
-         distance_meters,
-         verification_radius_meters,
-         verified,
-         created_at
-       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      id,
-      check.taskId,
-      check.latitude,
-      check.longitude,
-      check.accuracyMeters,
-      check.distanceMeters,
-      check.verificationRadiusMeters,
-      check.verified ? 1 : 0,
-      createdAt,
-    );
+    await this.db.withTransactionAsync(async () => {
+      await this.db.runAsync(
+        `INSERT INTO task_location_checks (
+           id,
+           task_id,
+           latitude,
+           longitude,
+           accuracy_meters,
+           distance_meters,
+           verification_radius_meters,
+           verified,
+           created_at
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        id,
+        check.taskId,
+        check.latitude,
+        check.longitude,
+        check.accuracyMeters,
+        check.distanceMeters,
+        check.verificationRadiusMeters,
+        check.verified ? 1 : 0,
+        createdAt,
+      );
+
+      // Outbox Pattern: location check metadata
+      const queueId = `SEQ-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+      const payloadJson = JSON.stringify({
+        checkId: id,
+        createdAt,
+        distanceMeters: check.distanceMeters,
+        verified: check.verified,
+      });
+
+      await this.db.runAsync(
+        `INSERT INTO sync_queue (
+           id, mutation_type, entity_id, task_id, payload_json, base_version, status, attempt_count, created_at, updated_at
+         ) VALUES (?, 'location_check_added', ?, ?, ?, NULL, 'pending', 0, ?, ?)`,
+        queueId,
+        id,
+        check.taskId,
+        payloadJson,
+        createdAt,
+        createdAt,
+      );
+    });
 
     return mapTaskLocationCheckRow({
       accuracyMeters: check.accuracyMeters,
@@ -252,5 +343,107 @@ export class SQLiteTaskRepository implements TaskRepository {
       verified: check.verified ? 1 : 0,
     });
   }
+
+  public async getSyncQueueSummary(): Promise<any> {
+    const row = await this.db.getFirstAsync<{
+      conflictCount: number;
+      failedCount: number;
+      pendingCount: number;
+      syncedCount: number;
+      totalCount: number;
+    }>(
+      `SELECT
+         COUNT(*) AS totalCount,
+         SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pendingCount,
+         SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) AS failedCount,
+         SUM(CASE WHEN status = 'conflict' THEN 1 ELSE 0 END) AS conflictCount,
+         SUM(CASE WHEN status = 'synced' THEN 1 ELSE 0 END) AS syncedCount
+       FROM sync_queue`,
+    );
+
+    return {
+      conflictCount: row?.conflictCount ?? 0,
+      failedCount: row?.failedCount ?? 0,
+      pendingCount: row?.pendingCount ?? 0,
+      syncedCount: row?.syncedCount ?? 0,
+      totalCount: row?.totalCount ?? 0,
+    };
+  }
+
+  public async listSyncQueue(): Promise<any[]> {
+    const rows = await this.db.getAllAsync<any>(
+      `SELECT
+         id,
+         mutation_type AS mutationType,
+         entity_id AS entityId,
+         task_id AS taskId,
+         payload_json AS payloadJson,
+         base_version AS baseVersion,
+         status,
+         attempt_count AS attemptCount,
+         next_attempt_at AS nextAttemptAt,
+         last_error AS lastError,
+         created_at AS createdAt,
+         updated_at AS updatedAt
+       FROM sync_queue
+       ORDER BY created_at DESC`,
+    );
+
+    return rows;
+  }
+
+  public async listSyncConflicts(): Promise<any[]> {
+    const rows = await this.db.getAllAsync<any>(
+      `SELECT
+         id,
+         queue_id AS queueId,
+         task_id AS taskId,
+         item_id AS itemId,
+         local_checked AS localChecked,
+         remote_checked AS remoteChecked,
+         remote_version AS remoteVersion,
+         created_at AS createdAt,
+         resolved_at AS resolvedAt,
+         resolution
+       FROM sync_conflicts
+       ORDER BY created_at DESC`,
+    );
+
+    return rows.map((r) => ({
+      ...r,
+      localChecked: r.localChecked === 1,
+      remoteChecked: r.remoteChecked === 1,
+    }));
+  }
+
+  public async getSyncConflictById(conflictId: string): Promise<any | null> {
+    const r = await this.db.getFirstAsync<any>(
+      `SELECT
+         id,
+         queue_id AS queueId,
+         task_id AS taskId,
+         item_id AS itemId,
+         local_checked AS localChecked,
+         remote_checked AS remoteChecked,
+         remote_version AS remoteVersion,
+         created_at AS createdAt,
+         resolved_at AS resolvedAt,
+         resolution
+       FROM sync_conflicts
+       WHERE id = ?`,
+      conflictId,
+    );
+
+    if (r == null) {
+      return null;
+    }
+
+    return {
+      ...r,
+      localChecked: r.localChecked === 1,
+      remoteChecked: r.remoteChecked === 1,
+    };
+  }
+
 }
 

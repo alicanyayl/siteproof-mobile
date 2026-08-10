@@ -93,6 +93,54 @@ export const taskLocationCheckSchema = z.object({
 export type TaskEvidence = z.infer<typeof taskEvidenceSchema>;
 export type TaskLocationCheck = z.infer<typeof taskLocationCheckSchema>;
 
+export const mutationTypeSchema = z.enum(['checklist_update', 'evidence_added', 'location_check_added']);
+export const syncStatusSchema = z.enum(['pending', 'syncing', 'failed', 'conflict', 'synced']);
+export const conflictResolutionSchema = z.enum(['keep_local', 'use_remote']);
+export const networkStatusSchema = z.enum(['online', 'offline', 'unknown']);
+
+export const syncQueueItemSchema = z.object({
+  attemptCount: z.number().int().nonnegative(),
+  baseVersion: z.number().int().positive().nullable(),
+  createdAt: z.string().datetime({ offset: true }),
+  entityId: z.string().min(1),
+  id: z.string().min(1),
+  lastError: z.string().nullable(),
+  mutationType: mutationTypeSchema,
+  nextAttemptAt: z.string().datetime({ offset: true }).nullable(),
+  payloadJson: z.string().min(1),
+  status: syncStatusSchema,
+  taskId: z.string().min(1),
+  updatedAt: z.string().datetime({ offset: true }),
+});
+
+export const syncConflictItemSchema = z.object({
+  createdAt: z.string().datetime({ offset: true }),
+  id: z.string().min(1),
+  itemId: z.string().min(1),
+  localChecked: z.boolean(),
+  queueId: z.string().min(1),
+  remoteChecked: z.boolean(),
+  remoteVersion: z.number().int().positive(),
+  resolution: conflictResolutionSchema.nullable(),
+  resolvedAt: z.string().datetime({ offset: true }).nullable(),
+  taskId: z.string().min(1),
+});
+
+export type MutationType = z.infer<typeof mutationTypeSchema>;
+export type SyncStatus = z.infer<typeof syncStatusSchema>;
+export type ConflictResolution = z.infer<typeof conflictResolutionSchema>;
+export type NetworkStatus = z.infer<typeof networkStatusSchema>;
+export type SyncQueueItem = z.infer<typeof syncQueueItemSchema>;
+export type SyncConflictItem = z.infer<typeof syncConflictItemSchema>;
+
+export type SyncQueueSummary = {
+  conflictCount: number;
+  failedCount: number;
+  pendingCount: number;
+  syncedCount: number;
+  totalCount: number;
+};
+
 export type TaskDetail = {
   checklist: ChecklistItem[];
   task: InspectionTask;
@@ -112,10 +160,15 @@ export interface TaskRepository {
   }): Promise<TaskLocationCheck>;
   getChecklistForTask(taskId: string): Promise<ChecklistItem[]>;
   getLatestLocationCheck(taskId: string): Promise<TaskLocationCheck | null>;
+  getSyncConflictById(conflictId: string): Promise<SyncConflictItem | null>;
+  getSyncQueueSummary(): Promise<SyncQueueSummary>;
   getTaskById(taskId: string): Promise<InspectionTask | null>;
   getTaskDetail(taskId: string): Promise<TaskDetail | null>;
   listAssignedTasks(): Promise<InspectionTask[]>;
   listEvidenceForTask(taskId: string): Promise<TaskEvidence[]>;
+  listSyncConflicts(): Promise<SyncConflictItem[]>;
+  listSyncQueue(): Promise<SyncQueueItem[]>;
   setChecklistItemChecked(itemId: string, checked: boolean): Promise<void>;
 }
+
 

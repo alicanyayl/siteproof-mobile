@@ -173,7 +173,8 @@ Implemented and physically verified: contextual pre-permission flows, CameraView
 
 ### Phase 3 — Lifecycle and synchronization
 
-Implement connectivity state, the local mutation queue, retry policy, foreground-resume behavior, custom-scheme deep links, scheduled local notifications, and deterministic conflict simulation.
+Implemented in code & verified via automated tests: real NetInfo device connectivity monitoring, database migration v3 durable `sync_queue` outbox, outbox mutation coalescing, AppState active lifecycle sync triggers, local Simulated Server version matching engine, conflict injection and failure simulation controls, exponential backoff retry policy, Sync Center UI (`/sync`), Conflict Resolution UI (`/sync/conflicts/[conflictId]`), 10-second local OS notification reminders (`expo-notifications`), and Expo Go deep-link demonstration (`expo-linking`). Physical device checkpoint validation is pending user hardware test.
+
 
 ### Phase 4 — Reporting and mobile quality
 

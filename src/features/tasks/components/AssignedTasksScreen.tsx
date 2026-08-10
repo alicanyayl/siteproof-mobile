@@ -13,10 +13,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { TaskCard } from '@/features/tasks/components/TaskCard';
-import type { InspectionTask, TaskRepository } from '@/features/tasks/domain/task';
+import { subscribeToNetworkStatus, getCurrentNetworkStatus } from '@/features/sync/services/connectivityService';
+import type { InspectionTask, NetworkStatus, SyncQueueSummary, TaskRepository } from '@/features/tasks/domain/task';
 import { getColors, radii, spacing, typography } from '@/theme';
 
 type AssignedTasksScreenProps = {
+  onOpenSyncCenter?: () => void;
   onSelectTask: (taskId: string) => void;
   refreshKey?: string;
   repository: TaskRepository;
@@ -27,13 +29,39 @@ type TaskListState =
   | { kind: 'loading' }
   | { kind: 'ready'; tasks: InspectionTask[] };
 
-export function AssignedTasksScreen({ onSelectTask, refreshKey, repository }: AssignedTasksScreenProps) {
+export function AssignedTasksScreen({ onOpenSyncCenter, onSelectTask, refreshKey, repository }: AssignedTasksScreenProps) {
   const colorScheme = useColorScheme();
   const colors = getColors(colorScheme);
   const { width } = useWindowDimensions();
   const horizontalPadding = width < 360 ? spacing.md : spacing.lg;
   const [reloadToken, setReloadToken] = useState(0);
   const [state, setState] = useState<TaskListState>({ kind: 'loading' });
+
+  const [networkStatus, setNetworkStatus] = useState<NetworkStatus>('online');
+  const [queueSummary, setQueueSummary] = useState<SyncQueueSummary>({
+    conflictCount: 0,
+    failedCount: 0,
+    pendingCount: 0,
+    syncedCount: 0,
+    totalCount: 0,
+  });
+
+  useEffect(() => {
+    let active = true;
+
+    getCurrentNetworkStatus().then((status) => {
+      if (active) setNetworkStatus(status);
+    });
+
+    const unsubscribe = subscribeToNetworkStatus((status) => {
+      if (active) setNetworkStatus(status);
+    });
+
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -51,6 +79,10 @@ export function AssignedTasksScreen({ onSelectTask, refreshKey, repository }: As
       },
     );
 
+    repository.getSyncQueueSummary().then((summary) => {
+      if (active) setQueueSummary(summary);
+    }, () => {});
+
     return () => {
       active = false;
     };
@@ -64,6 +96,7 @@ export function AssignedTasksScreen({ onSelectTask, refreshKey, repository }: As
   const tasks = state.kind === 'ready' ? state.tasks : [];
   const highPriorityCount = tasks.filter((task) => task.priority === 'high').length;
   const inProgressCount = tasks.filter((task) => task.status === 'in_progress').length;
+  const unsentCount = queueSummary.pendingCount + queueSummary.failedCount + queueSummary.conflictCount;
 
   return (
     <SafeAreaView edges={['top', 'bottom']} style={[styles.safeArea, { backgroundColor: colors.background }]}>
@@ -89,8 +122,33 @@ export function AssignedTasksScreen({ onSelectTask, refreshKey, repository }: As
         ListHeaderComponent={
           <View style={styles.header}>
             <View style={styles.brandRow}>
-              <View style={[styles.brandMark, { backgroundColor: colors.primary }]} />
-              <Text style={[styles.brand, { color: colors.primary }]}>SITEPROOF</Text>
+              <View style={styles.brandGroup}>
+                <View style={[styles.brandMark, { backgroundColor: colors.primary }]} />
+                <Text style={[styles.brand, { color: colors.primary }]}>SITEPROOF</Text>
+              </View>
+
+              {onOpenSyncCenter ? (
+                <Pressable
+                  accessibilityLabel="Open Sync Center"
+                  accessibilityRole="button"
+                  onPress={onOpenSyncCenter}
+                  style={[
+                    styles.syncBadgeButton,
+                    {
+                      backgroundColor: networkStatus === 'offline' ? colors.warningSoft : colors.surface,
+                      borderColor: networkStatus === 'offline' ? colors.warning : colors.border,
+                    },
+                  ]}
+                >
+                  <Text style={[styles.syncBadgeText, { color: networkStatus === 'offline' ? colors.warning : colors.text }]}>
+                    {networkStatus === 'offline'
+                      ? `Offline • ${unsentCount} queued`
+                      : unsentCount > 0
+                        ? `Sync • ${unsentCount} pending`
+                        : 'Sync Center'}
+                  </Text>
+                </Pressable>
+              ) : null}
             </View>
             <Text accessibilityRole="header" style={[styles.title, { color: colors.text }]}>Assigned tasks</Text>
             <Text style={[styles.subtitle, { color: colors.textMuted }]}>Inspection work stored locally on this device.</Text>
@@ -163,6 +221,11 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     letterSpacing: 1.4,
   },
+  brandGroup: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
   brandMark: {
     borderRadius: radii.pill,
     height: 9,
@@ -171,7 +234,18 @@ const styles = StyleSheet.create({
   brandRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: spacing.sm,
+    justifyContent: 'space-between',
+  },
+  syncBadgeButton: {
+    alignItems: 'center',
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  syncBadgeText: {
+    fontSize: typography.label,
+    fontWeight: '800',
   },
   emptyListContent: {
     flexGrow: 1,

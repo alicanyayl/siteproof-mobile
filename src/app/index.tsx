@@ -9,6 +9,7 @@ export default function AssignedTasksRoute() {
 
   return (
     <AssignedTasksScreen
+      onOpenSyncCenter={() => router.push('/sync' as any)}
       onSelectTask={(taskId) => router.push({ pathname: '/tasks/[taskId]', params: { taskId } })}
       refreshKey={pathname}
       repository={repository}
