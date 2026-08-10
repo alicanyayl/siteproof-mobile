@@ -122,7 +122,7 @@ export function LocationSection({ initialCheck, repository, task }: LocationSect
 
   return (
     <View style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-      <View style={styles.headerRow}>
+      <View style={styles.headerGroup}>
         <Text accessibilityRole="header" style={[styles.title, { color: colors.text }]}>
           Location verification
         </Text>
@@ -232,12 +232,12 @@ const styles = StyleSheet.create({
     fontSize: typography.body,
     lineHeight: 22,
   },
-  headerRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  headerGroup: {
+    alignItems: 'flex-start',
+    gap: spacing.xs,
   },
   statusBadge: {
+    alignSelf: 'flex-start',
     borderRadius: radii.pill,
     paddingHorizontal: spacing.sm,
     paddingVertical: 4,

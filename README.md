@@ -16,7 +16,7 @@ Phase 1 adds the offline task domain:
 - typed task-detail navigation with safe unknown-ID handling; and
 - immediately persisted checklist drafts that remain the local source of truth.
 
-Phase 2 implements native inspection evidence (IMPLEMENTED IN CODE):
+Phase 2 implements native inspection evidence:
 
 - contextual pre-permission dialogs before requesting camera or foreground location access;
 - full-screen rear camera capture (`CameraView`), picture preview, retake, and acceptance flow;
@@ -26,15 +26,36 @@ Phase 2 implements native inspection evidence (IMPLEMENTED IN CODE):
 - foreground location acquisition (`expo-location`) comparing device coordinates to task target sites; and
 - feedback haptics (`expo-haptics`) for photo acceptance and location evaluation results.
 
-Note: All evidence photos remain local to the Expo Go project/device environment; no remote upload service exists. Physical behavior on iPhone remains subject to physical user confirmation (PHYSICALLY VERIFIED ON IPHONE).
+Note: All evidence photos remain local to the Expo Go project/device environment; no remote upload service exists.
 
 The current baseline uses Expo SDK 54.0.36, React Native 0.81.5, React 19.1.0, TypeScript 5.9.3, Node.js 22 (`>=22.13 <23`), and pnpm 10.30.0. SDK 54 is a deliberate Expo Go compatibility choice for physical-device portfolio validation; it is not presented as technically superior to SDK 57. Continuous Native Generation is used, so generated `android/` and `ios/` projects are not committed.
+
+## Physical device verification
+
+The Phase 2 native inspection evidence workflow has been physically exercised and verified on hardware:
+
+- **Target hardware:** iPhone 16
+- **Runtime:** App Store Expo Go (Expo SDK 54)
+- **Appearance:** Dark mode
+
+### Confirmed on physical iPhone
+- SQLite checklist draft updates persisted across full application relaunch;
+- Camera photo evidence capture, preview, retake, and acceptance functioned in live Expo Go;
+- Accepted evidence photo persisted locally in document storage (`Paths.document`) and reloaded after relaunch;
+- Foreground location fix was acquired on device and recorded to SQLite;
+- Haversine distance, GPS accuracy, and verification radius rendered properly in dark appearance;
+- Location evaluation correctly identified an out-of-range position (e.g. 350.86 km from synthetic target coordinate, ±12 m device accuracy, 75 m required radius -> evaluated as *Outside inspection area*); and
+- Task target coordinates are synthetic test fixtures; physical location values are verified without exposing sensitive device coordinates.
+
+### Implemented in code, pending explicit physical confirmation
+- Haptic feedback (`expo-haptics`) is implemented for photo acceptance and location evaluation, but physical haptic feel was not consciously evaluated during the test run;
+- Permission-denied recovery screens, system Settings redirection, poor-accuracy edge states, light appearance, and invalid route handling are covered by automated unit tests but have not been physically exercised on hardware.
 
 ## Offline architecture
 
 `SQLiteProvider` initializes `siteproof.db` before application routes render. Migration version 1 creates `tasks` and `checklist_items`, while migration version 2 adds `task_evidence` and `task_location_checks`. UI code reads and updates data through `TaskRepository`; route parameters carry only a task ID. Checking an item or adding evidence writes state immediately to SQLite.
 
-Automated tests validate fixture integrity, list behavior, typed repository interactions, Haversine calculations, location verification rules, evidence filename generation, checklist accessibility state, and saved-state reloads.
+Automated tests validate fixture integrity, list behavior, typed repository interactions, Haversine calculations, location verification rules, evidence storage, camera route task validation, checklist accessibility state, and saved-state reloads.
 
 ## Local setup
 
@@ -66,4 +87,5 @@ Phase 3 lifecycle synchronization (connectivity state, mutation queue, retry pol
 ## License
 
 SiteProof is available under the [MIT License](LICENSE).
+
 

@@ -167,7 +167,8 @@ Implemented: task fixtures, validated domain schemas, a repository layer, SQLite
 
 ### Phase 2 — Native evidence
 
-Implemented in code: contextual pre-permission flows, CameraView rear photo capture, preview/retake/accept UI, persistent document photo storage using SDK 54 FileSystem API, migration v2 SQLite tables for evidence and location checks, pure TypeScript Haversine distance calculations and accuracy evaluation rules, foreground location verification, and feedback haptics.
+Implemented and physically verified: contextual pre-permission flows, CameraView rear photo capture, preview/retake/accept UI, persistent document photo storage using SDK 54 FileSystem API, migration v2 SQLite tables for evidence and location checks, pure TypeScript Haversine distance calculations and accuracy evaluation rules, and foreground location verification on a physical iPhone 16 running Expo Go SDK 54 in dark mode. Feedback haptic triggers are implemented in code but pending conscious physical user confirmation.
+
 
 
 ### Phase 3 — Lifecycle and synchronization

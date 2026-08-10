@@ -21,7 +21,7 @@ export function getEvidenceDirectory(): Directory {
 }
 
 /**
- * Generates a unique, deterministic filename for evidence files.
+ * Generates a unique evidence filename with timestamp and random suffix.
  */
 export function generateEvidenceFileName(taskId: string): string {
   const timestamp = Date.now();

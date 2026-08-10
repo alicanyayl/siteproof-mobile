@@ -1,6 +1,6 @@
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -15,15 +15,25 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { deleteEvidenceFile, persistEvidenceFile } from '@/features/evidence/services/evidenceStorage';
 import { triggerSuccessHaptic } from '@/features/haptics/haptics';
+import type { InspectionTask, TaskRepository } from '@/features/tasks/domain/task';
 import { useTaskRepository } from '@/features/tasks/hooks/useTaskRepository';
 import { getColors, radii, spacing, typography } from '@/theme';
 
-export default function CameraRoute() {
-  const params = useLocalSearchParams<{ taskId?: string | string[] }>();
-  const taskId = Array.isArray(params.taskId) ? (params.taskId[0] ?? '') : (params.taskId ?? '');
+type TaskValidationState =
+  | { kind: 'error' }
+  | { kind: 'loading' }
+  | { kind: 'notFound' }
+  | { kind: 'ready'; task: InspectionTask };
 
+export function CameraRouteContent({
+  repository,
+  taskId,
+}: {
+  repository: TaskRepository;
+  taskId: string;
+}) {
   const colors = getColors(useColorScheme());
-  const repository = useTaskRepository();
+  const [taskState, setTaskState] = useState<TaskValidationState>({ kind: 'loading' });
 
   const [permission, requestPermission] = useCameraPermissions();
   const [isCameraReady, setIsCameraReady] = useState(false);
@@ -32,6 +42,31 @@ export default function CameraRoute() {
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const cameraRef = useRef<CameraView>(null);
+
+  useEffect(() => {
+    let active = true;
+    if (!taskId) {
+      setTaskState({ kind: 'notFound' });
+      return;
+    }
+
+    repository.getTaskById(taskId).then(
+      (task) => {
+        if (active) {
+          setTaskState(task == null ? { kind: 'notFound' } : { kind: 'ready', task });
+        }
+      },
+      () => {
+        if (active) {
+          setTaskState({ kind: 'error' });
+        }
+      },
+    );
+
+    return () => {
+      active = false;
+    };
+  }, [repository, taskId]);
 
   const handleBack = () => {
     router.back();
@@ -88,10 +123,42 @@ export default function CameraRoute() {
     }
   };
 
-  if (!taskId) {
+  if (taskState.kind === 'loading') {
     return (
       <SafeAreaView style={[styles.stateScreen, { backgroundColor: colors.background }]}>
-        <Text style={[styles.stateTitle, { color: colors.text }]}>Task not found</Text>
+        <ActivityIndicator color={colors.primary} size="large" />
+        <Text style={[styles.stateTitle, { color: colors.text }]}>Verifying inspection task...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  if (taskState.kind === 'error') {
+    return (
+      <SafeAreaView style={[styles.stateScreen, { backgroundColor: colors.background }]}>
+        <Text style={[styles.stateTitle, { color: colors.text }]}>Task verification failed</Text>
+        <Text style={[styles.explanationText, { color: colors.textMuted }]}>
+          SiteProof could not verify task details from the local database.
+        </Text>
+        <Pressable
+          accessibilityRole="button"
+          onPress={handleBack}
+          style={[styles.primaryButton, { backgroundColor: colors.primary }]}
+        >
+          <Text style={[styles.buttonText, { color: colors.onPrimary }]}>Go back</Text>
+        </Pressable>
+      </SafeAreaView>
+    );
+  }
+
+  if (taskState.kind === 'notFound') {
+    return (
+      <SafeAreaView style={[styles.stateScreen, { backgroundColor: colors.background }]}>
+        <Text accessibilityRole="header" style={[styles.stateTitle, { color: colors.text }]}>
+          Task not found
+        </Text>
+        <Text style={[styles.explanationText, { color: colors.textMuted }]}>
+          No local inspection matches {taskId || 'this route'}.
+        </Text>
         <Pressable
           accessibilityRole="button"
           onPress={handleBack}
@@ -111,6 +178,7 @@ export default function CameraRoute() {
       </SafeAreaView>
     );
   }
+
 
   if (!permission.granted) {
     return (
@@ -401,16 +469,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     padding: spacing.md,
   },
-  usePhotoButton: {
-    alignItems: 'center',
-    borderRadius: radii.sm,
-    justifyContent: 'center',
-    minHeight: 48,
-    minWidth: 120,
-    paddingHorizontal: spacing.lg,
-  },
   usePhotoText: {
     fontSize: typography.body,
     fontWeight: '800',
   },
 });
+
+export default function CameraRoute() {
+  const params = useLocalSearchParams<{ taskId?: string | string[] }>();
+  const taskId = Array.isArray(params.taskId) ? (params.taskId[0] ?? '') : (params.taskId ?? '');
+  const repository = useTaskRepository();
+
+  return <CameraRouteContent repository={repository} taskId={taskId} />;
+}
+
