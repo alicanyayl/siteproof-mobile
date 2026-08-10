@@ -174,7 +174,7 @@ Implemented and verified via automated tests: real NetInfo device connectivity m
 
 ### Phase 4 — Reporting and mobile quality
 
-Implemented and verified: HTML inspection report generator with safe HTML escaping, PDF report creation via SDK 54 `expo-print`, native PDF sharing via SDK 54 `expo-sharing`, restrained native entrance animations and loading motion using React Native `Animated`, accessibility & Reduce Motion support via `AccessibilityInfo.isReduceMotionEnabled()` and `reduceMotionChanged` subscription, and responsive mobile layout hardening. Physical iPhone PDF/share confirmation remains pending user hardware test.
+Implemented and physically verified on iPhone 16: HTML inspection report generator with safe HTML escaping, PDF report creation via SDK 54 `expo-print`, native PDF sharing via SDK 54 `expo-sharing`, restrained native entrance animations and loading motion using React Native `Animated`, accessibility & Reduce Motion support via `AccessibilityInfo.isReduceMotionEnabled()` and `reduceMotionChanged` subscription, and responsive mobile layout hardening.
 
 ### Phase 5 — Finalization
 
@@ -193,7 +193,7 @@ The initial project will not include:
 - AI features;
 - background location tracking;
 - guaranteed synchronization while the app is terminated;
-- route navigation;
+- turn-by-turn or map navigation;
 - a social layer;
 - analytics or telemetry; or
 - App Store or Google Play submission.

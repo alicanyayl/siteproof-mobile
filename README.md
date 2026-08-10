@@ -99,7 +99,9 @@ Inspectors can export an inspection PDF report directly from the Task Detail rou
 - Real camera photo capture, preview, retake, and document file persistence under `Paths.document`;
 - Real foreground location acquisition and Haversine distance evaluation in dark appearance;
 - Offline queueing observation;
-- Local 10-second OS notification reminder delivery.
+- Local 10-second OS notification reminder delivery;
+- Local PDF report compilation (`expo-print`);
+- Native OS share sheet invocation (`expo-sharing`).
 
 ### Implemented & Automated-Tested (Pending Explicit Physical Confirmation)
 - Automatic connectivity recovery sync (`offline` -> `online` transition listener);
@@ -107,9 +109,7 @@ Inspectors can export an inspection PDF report directly from the Task Detail rou
 - Exponential backoff retry policy;
 - Side-by-side conflict resolution UI;
 - Expo Go deep-link handoff (`expo-linking`);
-- Notification tap navigation routing;
-- PDF report generation on physical iPhone;
-- Native share sheet invocation on physical iPhone.
+- Notification tap navigation routing.
 
 ### Android Platform Status
 - Non-interactive Android JavaScript bundle export passes cleanly in CI (`pnpm export:android`);
