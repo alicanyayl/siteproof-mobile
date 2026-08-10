@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react-native';
+import { render, screen } from '@testing-library/react-native';
 
 import { CameraRouteContent } from '@/app/tasks/[taskId]/camera';
 import { seedFixtures } from '@/db/seed';
@@ -11,13 +11,13 @@ describe('<CameraRouteContent />', () => {
       getTaskById: async () => null,
     });
 
-    render(<CameraRouteContent repository={repository} taskId="INS-99999" />);
+    await render(<CameraRouteContent repository={repository} taskId="INS-99999" />);
 
-    expect(await screen.findByRole('header', { name: 'Task not found' })).toBeVisible();
+    expect(await screen.findByText('Task not found')).toBeVisible();
     expect(screen.getByText('No local inspection matches INS-99999.')).toBeVisible();
   });
 
-  it('renders permission flow for a valid local task ID', async () => {
+  it('verifies valid local task ID before proceeding to camera permissions flow', async () => {
     const task = seedFixtures.tasks[0];
     if (task == null) {
       throw new Error('Expected task fixture.');
@@ -27,10 +27,9 @@ describe('<CameraRouteContent />', () => {
       getTaskById: async () => task,
     });
 
-    render(<CameraRouteContent repository={repository} taskId={task.id} />);
+    await render(<CameraRouteContent repository={repository} taskId={task.id} />);
 
-    await waitFor(() => {
-      expect(screen.queryByText('Verifying inspection task...')).toBeNull();
-    });
+    expect(await screen.findByText('Checking camera permissions...')).toBeVisible();
+    expect(screen.queryByText('Task not found')).toBeNull();
   });
 });

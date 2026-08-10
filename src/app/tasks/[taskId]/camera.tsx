@@ -469,6 +469,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     padding: spacing.md,
   },
+  usePhotoButton: {
+    alignItems: 'center',
+    borderRadius: radii.sm,
+    justifyContent: 'center',
+    minHeight: 48,
+    minWidth: 120,
+    paddingHorizontal: spacing.lg,
+  },
   usePhotoText: {
     fontSize: typography.body,
     fontWeight: '800',
