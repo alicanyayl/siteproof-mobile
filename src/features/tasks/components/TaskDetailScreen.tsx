@@ -13,7 +13,11 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EvidenceSection } from '@/features/evidence/components/EvidenceSection';
+import { triggerSuccessHaptic } from '@/features/haptics/haptics';
 import { LocationSection } from '@/features/location/components/LocationSection';
+import { FadeInView } from '@/features/motion/FadeInView';
+import { createInspectionPdfReport } from '@/features/reports/services/reportGenerator';
+import { shareInspectionReport } from '@/features/reports/services/reportSharing';
 import { ChecklistRow } from '@/features/tasks/components/ChecklistRow';
 import { formatDueAt } from '@/features/tasks/components/TaskCard';
 import { PriorityBadge, StatusBadge } from '@/features/tasks/components/TaskBadges';
@@ -196,8 +200,33 @@ function TaskDetailContent({
     saving: 'Saving draft on this device…',
   };
 
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const [reportError, setReportError] = useState<string | null>(null);
+
+  const handleGenerateReport = async () => {
+    if (isGeneratingReport) return;
+    setIsGeneratingReport(true);
+    setReportError(null);
+    triggerSuccessHaptic();
+
+    try {
+      const pdf = await createInspectionPdfReport(detail);
+      const shareRes = await shareInspectionReport(pdf.filePath);
+      if (shareRes.outcome === 'unavailable') {
+        setReportError(shareRes.reason);
+      } else if (shareRes.outcome === 'error') {
+        setReportError(shareRes.error);
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Could not generate report.';
+      setReportError(msg);
+    } finally {
+      setIsGeneratingReport(false);
+    }
+  };
+
   return (
-    <View style={styles.content}>
+    <FadeInView style={styles.content}>
       <View style={styles.hero}>
         <Text style={[styles.eyebrow, { color: colors.primary }]}>{task.inspectionType.toUpperCase()}</Text>
         <Text accessibilityRole="header" style={[styles.title, { color: colors.text }]}>{task.title}</Text>
@@ -230,6 +259,43 @@ function TaskDetailContent({
         </Text>
       </View>
 
+      {/* Report Action Card */}
+      <View style={[styles.reportCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <View style={styles.reportHeader}>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.reportCardTitle, { color: colors.text }]}>Inspection Report</Text>
+            <Text style={[styles.reportCardSubtitle, { color: colors.textMuted }]}>
+              Export &amp; share official PDF report with checklist and evidence summary.
+            </Text>
+          </View>
+        </View>
+        <Pressable
+          accessibilityLabel="Generate inspection report PDF"
+          accessibilityRole="button"
+          disabled={isGeneratingReport}
+          onPress={handleGenerateReport}
+          style={({ pressed }) => [
+            styles.reportButton,
+            {
+              backgroundColor: colors.primary,
+              opacity: isGeneratingReport || pressed ? 0.8 : 1,
+            },
+          ]}
+        >
+          {isGeneratingReport ? (
+            <ActivityIndicator color="#FFFFFF" size="small" style={{ marginRight: spacing.xs }} />
+          ) : null}
+          <Text style={styles.reportButtonText}>
+            {isGeneratingReport ? 'Preparing PDF Report…' : 'Generate & Share Report'}
+          </Text>
+        </Pressable>
+        {reportError ? (
+          <Text accessibilityLiveRegion="polite" style={[styles.reportErrorText, { color: colors.danger }]}>
+            {reportError}
+          </Text>
+        ) : null}
+      </View>
+
       <View accessibilityLiveRegion="polite" style={[styles.saveNotice, { backgroundColor: saveState === 'error' ? colors.dangerSoft : colors.statusSoft, borderColor: saveState === 'error' ? colors.danger : colors.status }]}>
         {saveState === 'saving' ? <ActivityIndicator color={colors.status} size="small" /> : <View style={[styles.saveMark, { backgroundColor: saveState === 'error' ? colors.danger : colors.status }]} />}
         <Text style={[styles.saveText, { color: saveState === 'error' ? colors.danger : colors.text }]}>{saveMessage[saveState]}</Text>
@@ -256,7 +322,7 @@ function TaskDetailContent({
       <EvidenceSection evidenceList={evidenceList} taskId={task.id} />
 
       <LocationSection initialCheck={initialLocationCheck} repository={repository} task={task} />
-    </View>
+    </FadeInView>
   );
 }
 
@@ -475,5 +541,42 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     letterSpacing: -0.6,
     lineHeight: 37,
+  },
+  reportButton: {
+    alignItems: 'center',
+    borderRadius: radii.sm,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    minHeight: 48,
+    paddingHorizontal: spacing.md,
+  },
+  reportButtonText: {
+    color: '#FFFFFF',
+    fontSize: typography.body,
+    fontWeight: '800',
+  },
+  reportCard: {
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    gap: spacing.md,
+    padding: spacing.lg,
+  },
+  reportCardSubtitle: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  reportCardTitle: {
+    fontSize: typography.title,
+    fontWeight: '800',
+    marginBottom: spacing.xs,
+  },
+  reportErrorText: {
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 18,
+  },
+  reportHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
 });

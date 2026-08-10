@@ -14,6 +14,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FadeInView } from '@/features/motion/FadeInView';
+import { PulseDot } from '@/features/motion/PulseDot';
 import { triggerSuccessHaptic } from '@/features/haptics/haptics';
 import {
   getCurrentNetworkStatus,
@@ -160,10 +162,11 @@ export default function SyncCenterRoute() {
         <View style={styles.placeholder} />
       </View>
 
-      <FlatList
-        contentContainerStyle={styles.listContent}
-        data={queueItems}
-        keyExtractor={(item) => item.id}
+      <FadeInView style={{ flex: 1 }}>
+        <FlatList
+          contentContainerStyle={styles.listContent}
+          data={queueItems}
+          keyExtractor={(item) => item.id}
         ListEmptyComponent={
           <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Text style={[styles.cardTitle, { color: colors.text }]}>Sync queue empty</Text>
@@ -177,18 +180,15 @@ export default function SyncCenterRoute() {
             {/* Real Connectivity Indicator & Simulated Server Label */}
             <View style={[styles.statusCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <View style={styles.statusRow}>
-                <View
-                  style={[
-                    styles.statusDot,
-                    {
-                      backgroundColor:
-                        networkStatus === 'online'
-                          ? colors.status
-                          : networkStatus === 'offline'
-                            ? colors.danger
-                            : colors.warning,
-                    },
-                  ]}
+                <PulseDot
+                  color={
+                    networkStatus === 'online'
+                      ? colors.status
+                      : networkStatus === 'offline'
+                        ? colors.danger
+                        : colors.warning
+                  }
+                  size={10}
                 />
                 <Text style={[styles.statusTitle, { color: colors.text }]}>
                   {networkStatus === 'online'
@@ -303,7 +303,8 @@ export default function SyncCenterRoute() {
           <QueueItemRow colors={colors} item={item} />
         )}
       />
-    </SafeAreaView>
+    </FadeInView>
+  </SafeAreaView>
   );
 }
 
