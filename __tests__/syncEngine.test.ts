@@ -37,6 +37,7 @@ describe('syncEngine & simulatedServer', () => {
     const fakeDb: any = {
       getFirstAsync: jest
         .fn()
+        .mockResolvedValueOnce(null) // fail_next_request
         .mockResolvedValueOnce({ checked: 0, version: 2 }) // simulated_remote_checklist
         .mockResolvedValueOnce({ checked: 1 }), // local checklist item
       runAsync: jest.fn().mockResolvedValue({ changes: 1 }),
@@ -77,7 +78,9 @@ describe('syncEngine & simulatedServer', () => {
   });
 
   it('accepts evidence_added and location_check_added without pretending image file upload', async () => {
-    const fakeDb: any = {};
+    const fakeDb: any = {
+      getFirstAsync: jest.fn().mockResolvedValue(null),
+    };
 
     const evidenceItem: SyncQueueItem = {
       attemptCount: 0,

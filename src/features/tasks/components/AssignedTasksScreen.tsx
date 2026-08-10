@@ -79,9 +79,14 @@ export function AssignedTasksScreen({ onOpenSyncCenter, onSelectTask, refreshKey
       },
     );
 
-    repository.getSyncQueueSummary().then((summary) => {
-      if (active) setQueueSummary(summary);
-    }, () => {});
+    if (typeof repository.getSyncQueueSummary === 'function') {
+      repository.getSyncQueueSummary().then(
+        (summary) => {
+          if (active && summary != null) setQueueSummary(summary);
+        },
+        () => {},
+      );
+    }
 
     return () => {
       active = false;
