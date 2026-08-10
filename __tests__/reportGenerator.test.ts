@@ -14,10 +14,26 @@ jest.mock('expo-print', () => ({
 describe('reportGenerator', () => {
   const sampleTaskDetail: TaskDetail = {
     checklist: [
-      { checked: true, id: 'CHK-1', label: 'Safety barrier verified', position: 1, required: true },
-      { checked: false, id: 'CHK-2', label: 'Housekeeping clear', position: 2, required: false },
+      {
+        checked: true,
+        id: 'INS-10044-CHK-01',
+        label: 'Safety barrier verified',
+        position: 1,
+        required: true,
+        taskId: 'INS-10044',
+        updatedAt: '2026-08-10T08:00:00.000Z',
+      },
+      {
+        checked: false,
+        id: 'INS-10044-CHK-02',
+        label: 'Housekeeping clear',
+        position: 2,
+        required: false,
+        taskId: 'INS-10044',
+        updatedAt: '2026-08-10T08:00:00.000Z',
+      },
     ],
-    evidence: [
+    evidenceList: [
       {
         createdAt: '2026-08-10T08:00:00.000Z',
         fileUri: 'file:///photos/photo-1.jpg',
@@ -25,7 +41,7 @@ describe('reportGenerator', () => {
         taskId: 'INS-10044',
       },
     ],
-    latestLocationCheck: {
+    initialLocationCheck: {
       accuracyMeters: 4.5,
       createdAt: '2026-08-10T08:05:00.000Z',
       distanceMeters: 18.2,
@@ -47,6 +63,8 @@ describe('reportGenerator', () => {
       siteName: 'Metro Hub Construction',
       status: 'in_progress',
       title: 'Structural Steel Pre-Pour Inspection',
+      updatedAt: '2026-08-10T08:00:00.000Z',
+      verificationRadiusMeters: 100,
     },
   };
 

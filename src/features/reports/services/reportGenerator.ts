@@ -1,7 +1,7 @@
 import * as Print from 'expo-print';
 
 import { escapeHtml } from '@/features/reports/utils/htmlEscape';
-import type { TaskDetail } from '@/features/tasks/domain/task';
+import type { TaskDetail, TaskEvidence } from '@/features/tasks/domain/task';
 
 export type GeneratedReport = {
   filePath: string;
@@ -12,7 +12,7 @@ export function generateInspectionReportHtml(
   detail: TaskDetail,
   generatedAtIso: string = new Date().toISOString(),
 ): string {
-  const { task, checklist, evidence, latestLocationCheck } = detail;
+  const { task, checklist, evidenceList, initialLocationCheck } = detail;
   const completedCount = checklist.filter((item) => item.checked).length;
   const totalCount = checklist.length;
   const completionPercentage = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
@@ -42,8 +42,8 @@ export function generateInspectionReportHtml(
     </div>
   `;
 
-  if (latestLocationCheck != null) {
-    const isVerified = latestLocationCheck.verified;
+  if (initialLocationCheck != null) {
+    const isVerified = initialLocationCheck.verified;
     const badgeColor = isVerified ? '#059669' : '#D97706';
     const badgeBg = isVerified ? '#ECFDF5' : '#FFFBEB';
     const statusText = isVerified ? 'Verified On-Site' : 'Outside Verification Area';
@@ -52,7 +52,7 @@ export function generateInspectionReportHtml(
       <div style="background-color: ${badgeBg}; border: 1px solid ${badgeColor}; border-radius: 8px; padding: 14px; margin-bottom: 20px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
           <strong style="color: ${badgeColor}; font-size: 14px;">${statusText}</strong>
-          <span style="color: #64748B; font-size: 12px;">Recorded: ${escapeHtml(new Date(latestLocationCheck.createdAt).toLocaleString())}</span>
+          <span style="color: #64748B; font-size: 12px;">Recorded: ${escapeHtml(new Date(initialLocationCheck.createdAt).toLocaleString())}</span>
         </div>
         <table style="width: 100%; font-size: 13px; color: #334155; border-collapse: collapse;">
           <tr>
@@ -61,21 +61,22 @@ export function generateInspectionReportHtml(
           </tr>
           <tr>
             <td style="padding: 4px 0; color: #64748B;">Measured Device Coords:</td>
-            <td style="padding: 4px 0; font-family: monospace;">${latestLocationCheck.latitude.toFixed(5)}, ${latestLocationCheck.longitude.toFixed(5)}</td>
+            <td style="padding: 4px 0; font-family: monospace;">${initialLocationCheck.latitude.toFixed(5)}, ${initialLocationCheck.longitude.toFixed(5)}</td>
           </tr>
           <tr>
             <td style="padding: 4px 0; color: #64748B;">Calculated Distance:</td>
-            <td style="padding: 4px 0; font-weight: 600;">${latestLocationCheck.distanceMeters.toFixed(1)} m</td>
+            <td style="padding: 4px 0; font-weight: 600;">${initialLocationCheck.distanceMeters.toFixed(1)} m</td>
           </tr>
           <tr>
             <td style="padding: 4px 0; color: #64748B;">Required Radius / Device Accuracy:</td>
-            <td style="padding: 4px 0;">${latestLocationCheck.verificationRadiusMeters} m radius / &plusmn;${latestLocationCheck.accuracyMeters != null ? Math.round(latestLocationCheck.accuracyMeters) : '?'} m accuracy</td>
+            <td style="padding: 4px 0;">${initialLocationCheck.verificationRadiusMeters} m radius / &plusmn;${initialLocationCheck.accuracyMeters != null ? Math.round(initialLocationCheck.accuracyMeters) : '?'} m accuracy</td>
           </tr>
         </table>
       </div>
     `;
   }
 
+  const evidence = evidenceList ?? [];
   const evidenceCount = evidence.length;
   const evidenceSummaryHtml = `
     <div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 14px; margin-bottom: 24px;">
@@ -89,7 +90,7 @@ export function generateInspectionReportHtml(
         <ul style="margin: 10px 0 0 0; padding-left: 20px; font-size: 12px; color: #475569;">
           ${evidence
             .map(
-              (e) => `
+              (e: TaskEvidence) => `
             <li style="margin-bottom: 4px;">
               ID: <code style="font-family: monospace;">${escapeHtml(e.id)}</code> &bull; Captured: ${escapeHtml(new Date(e.createdAt).toLocaleString())}
             </li>
