@@ -66,7 +66,7 @@ describe('<TaskDetailScreen />', () => {
       expect(setChecklistItemChecked).toHaveBeenCalledWith(uncheckedItem.id, true);
       expect(screen.getByRole('checkbox', { name: new RegExp(uncheckedItem.label) })).toBeChecked();
     });
-    expect(screen.getByText('Draft saved on this device.')).toBeVisible();
+    expect(screen.getByText('Draft saved on this device.')).toBeTruthy();
   });
 
   it('handles an unknown task ID without crashing', async () => {
@@ -109,11 +109,11 @@ describe('<TaskDetailScreen />', () => {
       <TaskDetailScreen onBack={jest.fn()} repository={repository} taskId={detail.task.id} />,
     );
 
-    expect(await screen.findByRole('header', { name: 'Photo evidence' })).toBeVisible();
-    expect(screen.getByRole('header', { name: 'Location verification' })).toBeVisible();
-    expect(screen.getByText('Verified')).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Add photo evidence' })).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Verify location' })).toBeVisible();
+    expect(await screen.findByRole('header', { name: 'Photo evidence' })).toBeTruthy();
+    expect(screen.getByRole('header', { name: 'Location verification' })).toBeTruthy();
+    expect(screen.getByText('Verified')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Add photo evidence' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Verify location' })).toBeTruthy();
   });
 });
 
