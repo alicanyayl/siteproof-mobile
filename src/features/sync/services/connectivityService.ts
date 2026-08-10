@@ -15,12 +15,20 @@ export function determineNetworkStatus(state: NetInfoState | null | undefined): 
   return 'unknown';
 }
 
+export function shouldTriggerTransitionSync(
+  prevStatus: NetworkStatus,
+  newStatus: NetworkStatus,
+): boolean {
+  return (prevStatus === 'offline' || prevStatus === 'unknown') && newStatus === 'online';
+}
+
 export function subscribeToNetworkStatus(onChange: (status: NetworkStatus) => void): () => void {
   try {
     return NetInfo.addEventListener((state) => {
       onChange(determineNetworkStatus(state));
     });
-  } catch {
+  } catch (error) {
+    console.warn('Failed to subscribe to network status changes:', error);
     return () => {};
   }
 }
@@ -29,7 +37,8 @@ export async function getCurrentNetworkStatus(): Promise<NetworkStatus> {
   try {
     const state = await NetInfo.fetch();
     return determineNetworkStatus(state);
-  } catch {
-    return 'online';
+  } catch (error) {
+    console.warn('Failed to fetch current network status:', error);
+    return 'unknown';
   }
 }

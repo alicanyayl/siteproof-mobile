@@ -1,11 +1,15 @@
-import {
+import NetInfo, {
   NetInfoStateType,
   type NetInfoCellularState,
   type NetInfoNoConnectionState,
   type NetInfoWifiState,
 } from '@react-native-community/netinfo';
 
-import { determineNetworkStatus } from '@/features/sync/services/connectivityService';
+import {
+  determineNetworkStatus,
+  getCurrentNetworkStatus,
+  shouldTriggerTransitionSync,
+} from '@/features/sync/services/connectivityService';
 
 describe('connectivityService', () => {
   it('identifies offline when isConnected is false', () => {
@@ -61,5 +65,31 @@ describe('connectivityService', () => {
     const statusUndefined = determineNetworkStatus(undefined);
     expect(statusNull).toBe('unknown');
     expect(statusUndefined).toBe('unknown');
+  });
+
+  it('returns unknown when NetInfo.fetch() fails', async () => {
+    const fetchSpy = jest.spyOn(NetInfo, 'fetch').mockRejectedValueOnce(new Error('NetInfo native error'));
+    const status = await getCurrentNetworkStatus();
+    expect(status).toBe('unknown');
+    fetchSpy.mockRestore();
+  });
+
+  describe('shouldTriggerTransitionSync', () => {
+    it('triggers sync when transitioning from offline to online', () => {
+      expect(shouldTriggerTransitionSync('offline', 'online')).toBe(true);
+    });
+
+    it('triggers sync when transitioning from unknown to online', () => {
+      expect(shouldTriggerTransitionSync('unknown', 'online')).toBe(true);
+    });
+
+    it('does not trigger sync on duplicate online -> online events', () => {
+      expect(shouldTriggerTransitionSync('online', 'online')).toBe(false);
+    });
+
+    it('does not trigger sync on offline -> offline or online -> offline transitions', () => {
+      expect(shouldTriggerTransitionSync('offline', 'offline')).toBe(false);
+      expect(shouldTriggerTransitionSync('online', 'offline')).toBe(false);
+    });
   });
 });

@@ -1,5 +1,12 @@
+import NetInfo, {
+  NetInfoStateType,
+  type NetInfoNoConnectionState,
+  type NetInfoWifiState,
+} from '@react-native-community/netinfo';
+
 import type { SyncDatabaseBoundary } from '@/db/types';
 import { processSimulatedServerMutation } from '@/features/sync/services/simulatedServer';
+import { processSyncQueue } from '@/features/sync/services/syncProcessor';
 import type { SyncQueueItem } from '@/features/tasks/domain/task';
 
 type MockDatabaseConfig = {
@@ -112,5 +119,64 @@ describe('syncEngine & simulatedServer', () => {
 
     const res = await processSimulatedServerMutation(fakeDb, evidenceItem);
     expect(res.outcome).toBe('synced');
+  });
+
+  describe('processSyncQueue connectivity & force rules', () => {
+    it('returns 0 processed when network is offline, even if force option is true', async () => {
+      const offlineState: NetInfoNoConnectionState = {
+        details: null,
+        isConnected: false,
+        isInternetReachable: false,
+        type: NetInfoStateType.none,
+      };
+
+      const fetchSpy = jest.spyOn(NetInfo, 'fetch').mockResolvedValue(offlineState);
+      const getAllAsync = jest.fn();
+      const fakeDb = createMockSyncDatabase({ getAllAsync });
+
+      const normalRes = await processSyncQueue(fakeDb, { force: false });
+      expect(normalRes.processedCount).toBe(0);
+      expect(getAllAsync).not.toHaveBeenCalled();
+
+      const forceRes = await processSyncQueue(fakeDb, { force: true });
+      expect(forceRes.processedCount).toBe(0);
+      expect(getAllAsync).not.toHaveBeenCalled();
+
+      fetchSpy.mockRestore();
+    });
+
+    it('queries database with force parameter when online', async () => {
+      const onlineState: NetInfoWifiState = {
+        details: {
+          bssid: null,
+          frequency: null,
+          ipAddress: null,
+          isConnectionExpensive: false,
+          linkSpeed: null,
+          rxLinkSpeed: null,
+          ssid: null,
+          strength: null,
+          subnet: null,
+          txLinkSpeed: null,
+        },
+        isConnected: true,
+        isInternetReachable: true,
+        type: NetInfoStateType.wifi,
+      };
+
+      const fetchSpy = jest.spyOn(NetInfo, 'fetch').mockResolvedValue(onlineState);
+      const getAllAsync = jest.fn().mockResolvedValue([]);
+      const fakeDb = createMockSyncDatabase({ getAllAsync });
+
+      await processSyncQueue(fakeDb, { force: true });
+
+      expect(getAllAsync).toHaveBeenCalledWith(
+        expect.stringContaining('WHERE status IN'),
+        expect.any(String),
+        1, // force = 1
+      );
+
+      fetchSpy.mockRestore();
+    });
   });
 });

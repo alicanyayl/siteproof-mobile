@@ -37,7 +37,7 @@ export async function processSyncQueue(
 
   try {
     const networkStatus = await getCurrentNetworkStatus();
-    if (networkStatus === 'offline' && !options.force) {
+    if (networkStatus !== 'online') {
       return result;
     }
 

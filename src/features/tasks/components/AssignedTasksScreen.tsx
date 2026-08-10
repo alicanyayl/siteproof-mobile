@@ -37,7 +37,7 @@ export function AssignedTasksScreen({ onOpenSyncCenter, onSelectTask, refreshKey
   const [reloadToken, setReloadToken] = useState(0);
   const [state, setState] = useState<TaskListState>({ kind: 'loading' });
 
-  const [networkStatus, setNetworkStatus] = useState<NetworkStatus>('online');
+  const [networkStatus, setNetworkStatus] = useState<NetworkStatus>('unknown');
   const [isSyncSummaryUnavailable, setIsSyncSummaryUnavailable] = useState(false);
   const [queueSummary, setQueueSummary] = useState<SyncQueueSummary>({
     conflictCount: 0,

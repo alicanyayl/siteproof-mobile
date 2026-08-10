@@ -34,7 +34,7 @@ export default function SyncCenterRoute() {
   const repository = useTaskRepository();
   const colors = getColors(useColorScheme());
 
-  const [networkStatus, setNetworkStatus] = useState<NetworkStatus>('online');
+  const [networkStatus, setNetworkStatus] = useState<NetworkStatus>('unknown');
   const [summary, setSummary] = useState<SyncQueueSummary>({
     conflictCount: 0,
     failedCount: 0,

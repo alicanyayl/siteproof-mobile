@@ -7,10 +7,16 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { DatabaseProvider } from '@/db/DatabaseProvider';
 import {
+  getCurrentNetworkStatus,
+  shouldTriggerTransitionSync,
+  subscribeToNetworkStatus,
+} from '@/features/sync/services/connectivityService';
+import {
   parseNotificationData,
   setupNotificationHandler,
 } from '@/features/sync/services/notificationService';
 import { processSyncQueue } from '@/features/sync/services/syncProcessor';
+import type { NetworkStatus } from '@/features/tasks/domain/task';
 import { getColors } from '@/theme';
 
 function RootLayoutContent() {
@@ -29,9 +35,25 @@ function RootLayoutContent() {
       }
     });
 
-    // Initial sync trigger on startup
-    processSyncQueue(db).catch((error) => {
-      console.warn('Background sync error on app startup:', error);
+    // Offline -> Online transition sync trigger
+    let prevNetworkStatus: NetworkStatus = 'unknown';
+
+    getCurrentNetworkStatus().then((initialStatus) => {
+      if (initialStatus === 'online') {
+        processSyncQueue(db).catch((error) => {
+          console.warn('Background sync error on app startup:', error);
+        });
+      }
+      prevNetworkStatus = initialStatus;
+    });
+
+    const netSub = subscribeToNetworkStatus((status) => {
+      if (shouldTriggerTransitionSync(prevNetworkStatus, status)) {
+        processSyncQueue(db).catch((error) => {
+          console.warn('Connectivity transition sync error:', error);
+        });
+      }
+      prevNetworkStatus = status;
     });
 
     // Notification Response Listener for safe typed navigation
@@ -51,6 +73,7 @@ function RootLayoutContent() {
 
     return () => {
       subscription.remove();
+      netSub();
       notifSub.remove();
     };
   }, [db]);
